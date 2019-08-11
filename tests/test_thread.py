@@ -27,7 +27,6 @@ def test_context_local_vars_work_for_threads():
         tasks = [threading.Thread(target=worker, args=(i,)) for i in range(10)]
         consume(t.start() for t in tasks)
         consume(t.join() for t in tasks)
-        print(results)
         assert all(i in results for i in range(10))
         assert ctx.value == -1
 

@@ -55,7 +55,6 @@ def test_context_local_async_reflect_changes_made_downstream():
         tasks = asyncio.gather(*(worker(i) for i in range(0, 10, 2)))
         loop = asyncio.get_event_loop()
         loop.run_until_complete(tasks)
-        print(results)
         assert all(i in results for i in range(10))
         assert ctx.value == -1
 
