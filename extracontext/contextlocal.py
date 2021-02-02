@@ -18,22 +18,15 @@ visible inside  the decorated callable.
 """
 
 import sys
+
 from functools import wraps
+
 
 __author__ = "João S. O. Bueno"
 __license__ = "LGPL v. 3.0+"
 
 class ContextError(AttributeError):
     pass
-
-
-class ContextSentinel:
-    def __init__(self, registry, key):
-        self.registry = registry
-        self.key = key
-
-    def __del__(self):
-        del self.registry[self.key]
 
 
 _sentinel = object()
@@ -48,14 +41,24 @@ class ContextLocal:
 
         f = sys._getframe(2)
         while f:
-            h = hash(f)
-            if h in self._registry and (name is None or name in self._registry[h]):
-                return self._registry[h]
+            hf = hash(f)
+            if hf in self._registry:
+                if not "$contexts" in f.f_locals:
+                    del self._registry[hf]
+                else:
+                    namespace = f.f_locals["$contexts"][self._registry[hf]]
+                    if name is None or name in namespace:
+                        return namespace
             f = f.f_back
         if name:
             raise ContextError(f"{name !r} not defined in any previous context")
         raise ContextError("No previous context set")
 
+    def _register_context(self, f):
+        hf = hash(f)
+        contexts_list = f.f_locals.setdefault("$contexts", [])
+        contexts_list.append({})
+        self._registry[hf] = len(contexts_list) - 1
 
     def __getattr__(self, name):
         try:
@@ -71,7 +74,10 @@ class ContextLocal:
         except ContextError:
             # Automatically creates a new namespace if not inside
             # any explicit denominated context:
-            namespace = self._registry[hash(sys._getframe(1))] = {}
+            self._register_context(sys._getframe(1))
+            namespace = self._introspect_registry()
+
+            # namespace = self._registry[hash(sys._getframe(1))] = {}
         namespace[name] = value
 
 
@@ -83,7 +89,9 @@ class ContextLocal:
         @wraps(callable_)
         def wrapper(*args, **kw):
             f = sys._getframe()
-            self._registry[hash(f)] = {}
+            self._register_context(f)
+            # f = sys._getframe()
+            # self._registry[hash(f)] = {}
             result = _sentinel
             try:
                 result = callable_(*args, **kw)
@@ -93,8 +101,7 @@ class ContextLocal:
                 if result is not _sentinel:
                     frame = getattr(result, "gi_frame", getattr(result, "cr_frame", None))
                     if frame:
-                        self._registry[hash(frame)] = {}
-                        frame.f_locals["$context_sentinel"] = ContextSentinel(self._registry, hash(frame))
+                        self._register_context(frame)
 
             return result
         return wrapper
