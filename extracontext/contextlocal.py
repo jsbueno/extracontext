@@ -58,12 +58,20 @@ class ContextLocal:
 
 
     def __getattr__(self, name):
-        namespace = self._introspect_registry(name)
-        return namespace[name]
+        try:
+            namespace = self._introspect_registry(name)
+            return namespace[name]
+        except (ContextError, KeyError):
+            raise AttributeError(f"Attribute not set: {name}")
 
 
     def __setattr__(self, name, value):
-        namespace = self._introspect_registry()
+        try:
+            namespace = self._introspect_registry()
+        except ContextError:
+            # Automatically creates a new namespace if not inside
+            # any explicit denominated context:
+            namespace = self._registry[hash(sys._getframe(1))] = {}
         namespace[name] = value
 
 

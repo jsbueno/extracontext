@@ -20,3 +20,7 @@ and use the instance as namespace for private variables that will be local
 and non-local until entering another callable decorated
 with `intance.context` - that will create a new, separated scope
 visible inside  the decorated callable.
+
+
+Example:
+

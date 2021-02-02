@@ -11,8 +11,32 @@ https://stackoverflow.com/questions/53611690/how-do-i-write-consistent-stateful-
 
 from contextlib import contextmanager
 
-from extracontext import ContextLocal
+import pytest
 
+from extracontext import ContextLocal, ContextError
+
+
+def test_context_local_vars_work_as_namespace():
+    ctx = ContextLocal()
+    ctx.value = 1
+    assert ctx.value == 1
+    del ctx.value
+    with pytest.raises(AttributeError):
+        assert ctx.value == 1
+
+
+
+def test_context_local_vars_work_as_decorator():
+    ctx = ContextLocal()
+
+    @ctx.context
+    def func():
+        ctx.value = 1
+        assert ctx.value == 1
+
+    func()
+    with pytest.raises(AttributeError):
+        assert ctx.value == 1
 
 
 def test_context_local_vars_work_for_generators():
