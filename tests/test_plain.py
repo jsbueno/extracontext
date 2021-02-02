@@ -1,3 +1,4 @@
+import gc
 import sys
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
@@ -16,7 +17,7 @@ def test_context_local_vars_work_as_namespace():
         assert ctx.value == 1
 
 
-def test_each_call_creates_unique_context():
+def test_each_call_creates_unique_context_and_clean_up():
     context_keys = set()
 
     ctx = ContextLocal()
@@ -29,7 +30,27 @@ def test_each_call_creates_unique_context():
         testcall()
 
     assert len(context_keys) == 10
-    assert len(ctx._registry.keys()) == 0
+    assert len(list(ctx._registry.keys())) == 0
+
+
+def test_unique_context_for_generators_is_cleaned_up():
+    context_keys = set()
+
+    ctx = ContextLocal()
+
+    @ctx.context
+    def testcall():
+        context_keys.update(k.value for k in ctx._registry.keys())
+        yield None
+
+    for i in range(100):
+        for _ in testcall():
+            pass
+    gc.collect()
+
+
+    assert len(context_keys) == 100
+    assert len(list(ctx._registry.keys())) == 0
 
 
 def recursive_size(obj):

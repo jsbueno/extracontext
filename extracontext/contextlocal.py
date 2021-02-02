@@ -21,6 +21,7 @@ import uuid
 import sys
 
 from functools import wraps
+from weakref import WeakKeyDictionary
 
 
 __author__ = "João S. O. Bueno"
@@ -33,10 +34,27 @@ class ContextError(AttributeError):
 _sentinel = object()
 
 
+class _WeakId:
+    __slots__ = ["__weakref__", "value"]
+    def __init__(self, v=0):
+        if not v:
+            v = int(uuid.uuid4())
+        self.value = v
+
+    def __eq__(self, other):
+        return self.value == other.value
+
+    def __hash__(self):
+        return hash(self.value)
+
+    def __repr__(self):
+        return f"ID({uuid.UUID(int=self.value)})"
+
+
 class ContextLocal:
 
     def __init__(self):
-        super().__setattr__("_registry", {})
+        super().__setattr__("_registry", WeakKeyDictionary())
 
     def _introspect_registry(self, name=None):
 
@@ -54,7 +72,7 @@ class ContextLocal:
 
     def _frameid(self, frame):
         if not "$contexts_salt" in frame.f_locals:
-            frame.f_locals["$contexts_salt"] = int(uuid.uuid4())
+            frame.f_locals["$contexts_salt"] = _WeakId()
         return frame.f_locals["$contexts_salt"]
 
 
@@ -94,13 +112,15 @@ class ContextLocal:
         def wrapper(*args, **kw):
             f = sys._getframe()
             self._register_context(f)
+            f_id = self._frameid(f)
             # f = sys._getframe()
             # self._registry[hash(f)] = {}
             result = _sentinel
             try:
                 result = callable_(*args, **kw)
             finally:
-                del self._registry[self._frameid(f)]
+                if f_id in self._registry:
+                    del self._registry[f_id]
                 # Setup context for generator or coroutine if one was returned:
                 if result is not _sentinel:
                     frame = getattr(result, "gi_frame", getattr(result, "cr_frame", None))
