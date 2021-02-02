@@ -17,6 +17,7 @@ visible inside  the decorated callable.
 
 """
 
+import uuid
 import sys
 
 from functools import wraps
@@ -41,21 +42,24 @@ class ContextLocal:
 
         f = sys._getframe(2)
         while f:
-            hf = hash(f)
+            hf = self._frameid(f)
             if hf in self._registry:
-                if not "$contexts" in f.f_locals:
-                    del self._registry[hf]
-                else:
-                    namespace = f.f_locals["$contexts"][self._registry[hf]]
-                    if name is None or name in namespace:
-                        return namespace
+                namespace = f.f_locals["$contexts"][self._registry[hf]]
+                if name is None or name in namespace:
+                    return namespace
             f = f.f_back
         if name:
             raise ContextError(f"{name !r} not defined in any previous context")
         raise ContextError("No previous context set")
 
+    def _frameid(self, frame):
+        if not "$contexts_salt" in frame.f_locals:
+            frame.f_locals["$contexts_salt"] = int(uuid.uuid4())
+        return frame.f_locals["$contexts_salt"]
+
+
     def _register_context(self, f):
-        hf = hash(f)
+        hf = self._frameid(f)
         contexts_list = f.f_locals.setdefault("$contexts", [])
         contexts_list.append({})
         self._registry[hf] = len(contexts_list) - 1
@@ -96,7 +100,7 @@ class ContextLocal:
             try:
                 result = callable_(*args, **kw)
             finally:
-                del self._registry[hash(f)]
+                del self._registry[self._frameid(f)]
                 # Setup context for generator or coroutine if one was returned:
                 if result is not _sentinel:
                     frame = getattr(result, "gi_frame", getattr(result, "cr_frame", None))

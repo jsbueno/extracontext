@@ -16,16 +16,6 @@ import pytest
 from extracontext import ContextLocal, ContextError
 
 
-def test_context_local_vars_work_as_namespace():
-    ctx = ContextLocal()
-    ctx.value = 1
-    assert ctx.value == 1
-    del ctx.value
-    with pytest.raises(AttributeError):
-        assert ctx.value == 1
-
-
-
 def test_context_local_vars_work_as_decorator():
     ctx = ContextLocal()
 
