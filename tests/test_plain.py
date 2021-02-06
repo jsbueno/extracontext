@@ -131,6 +131,34 @@ def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassig
     assert ctx.var1 == 1
 
 
+def test_context_granddaugher_works_nice_with_daughter_deleting_attribute():
+    context_keys = set()
+
+    ctx = ContextLocal()
+
+    @ctx.context
+    def granddaughter():
+        with pytest.raises(AttributeError):
+            ctx.var1
+        ctx.var1 = 2
+        assert ctx.var1 == 2
+
+
+    @ctx.context
+    def daughter():
+        assert ctx.var1 == 1
+        del ctx.var1
+        granddaughter()
+        with pytest.raises(AttributeError):
+            ctx.var1
+
+
+
+    ctx.var1 = 1
+    daughter()
+    assert ctx.var1 == 1
+
+
 
 def test_each_call_creates_unique_context_and_clean_up():
     context_keys = set()
