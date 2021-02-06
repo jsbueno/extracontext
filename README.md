@@ -47,3 +47,21 @@ def runner():
     any(next(gen, None) for gen in generators)
     assert results == list(range(10))
 ```
+
+Next Steps:
+-----------
+ 1. Add a context class that uses mapping semantics -
+current "ContextLocal" can be used as namespace
+as threading.locals - but sometimes a mapping can help more
+
+
+ 1. Add a way to chain-contexts, so, for example
+and app can have a root context with default values
+
+ 1. Add a contextvars.ContextVar backed class, and add some
+ performance benchmarking. Current implementation is Python code
+ all the way and "hides" context values in the frame local variables.
+
+ 1. Add (Python's "with" command)'s context manager semantics: currently
+ contexts are separated by using an explicit decorator or by entering a
+ generator/coroutine
