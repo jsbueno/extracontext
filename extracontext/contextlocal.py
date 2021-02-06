@@ -19,6 +19,7 @@ visible inside  the decorated callable.
 
 import uuid
 import sys
+import typing as T
 
 from functools import wraps
 from weakref import WeakKeyDictionary
@@ -56,16 +57,30 @@ class ContextLocal:
     def __init__(self):
         super().__setattr__("_registry", WeakKeyDictionary())
 
-    def _introspect_registry(self, name=None):
-
+    def _introspect_registry(self, name=None) -> T.Tuple[dict, T.Tuple[int, int]]:
+        """
+            returns the first namespace found for this context, if name is None
+            else, the first namespace where the name exists. The second return
+            value is a tuple inticatind the frame distance to the topmost namespace
+            and the frame distance to the returned namespace.
+            This way callers can tell if the searched name is on the topmost
+            namespace and act accordingly. ("del" needs this information,
+            as it can't remove information on an outter namespace)
+        """
         f = sys._getframe(2)
+        count = 0
+        first_ns = None
         while f:
             hf = self._frameid(f)
             if hf in self._registry:
+                if first_ns is None:
+                    first_ns = count
                 namespace = f.f_locals["$contexts"][self._registry[hf]]
                 if name is None or name in namespace:
-                    return namespace
+                    return namespace, (first_ns, count)
             f = f.f_back
+            count += 1
+
         if name:
             raise ContextError(f"{name !r} not defined in any previous context")
         raise ContextError("No previous context set")
@@ -84,28 +99,53 @@ class ContextLocal:
 
     def __getattr__(self, name):
         try:
-            namespace = self._introspect_registry(name)
-            return namespace[name]
+            namespace, _ = self._introspect_registry(name)
+            result = namespace[name]
+            if result is _sentinel:
+                raise KeyError(name)
+            return result
         except (ContextError, KeyError):
             raise AttributeError(f"Attribute not set: {name}")
 
 
     def __setattr__(self, name, value):
         try:
-            namespace = self._introspect_registry()
+            namespace, _ = self._introspect_registry()
         except ContextError:
             # Automatically creates a new namespace if not inside
             # any explicit denominated context:
             self._register_context(sys._getframe(1))
-            namespace = self._introspect_registry()
+            namespace, _ = self._introspect_registry()
 
             # namespace = self._registry[hash(sys._getframe(1))] = {}
         namespace[name] = value
 
 
     def __delattr__(self, name):
-        namespace = self._introspect_registry(name)
-        del namespace[name]
+        try:
+            namespace, (topmost_ns, found_ns) = self._introspect_registry(name)
+        except ContextError:
+            raise AttributeError(name)
+        if topmost_ns == found_ns:
+            result = namespace[name]
+            if result is not _sentinel:
+                if "$deleted" in namespace and name in namespace["$deleted"]:
+                    # attribute exists in target namespace, but the outter
+                    # attribute had previously been shadowed by a delete -
+                    # restore the shadowing:
+                    setattr(self, name, _sentinel)
+
+                else:
+                    # Remove topmost name assignemnt, and outer value is exposed
+                    del namespace[name]
+                return
+            # value is already shadowed:
+            raise AttributeError(name)
+
+        # Name is found, but it is not on the top-most level, so attribute is shadowed:
+        setattr(self, name, _sentinel)
+        namespace, _ = self._introspect_registry(name)
+        namespace.setdefault("$deleted", set()).add(name)
 
     def context(self, callable_):
         @wraps(callable_)
