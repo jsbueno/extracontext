@@ -19,7 +19,7 @@ from extracontext import ContextLocal, ContextError
 def test_context_local_vars_work_as_decorator():
     ctx = ContextLocal()
 
-    @ctx.context
+    @ctx
     def func():
         ctx.value = 1
         assert ctx.value == 1
@@ -45,7 +45,7 @@ def test_context_local_vars_work_for_generators():
             ctx.mode = previous
 
 
-    @ctx.context
+    @ctx
     def first():
         ctx.mode = 0
         results.append(("starting", ctx.mode))
@@ -58,7 +58,7 @@ def test_context_local_vars_work_for_generators():
             results.append(("ended second", ctx.mode))
         results.append(("exited first context manager", ctx.mode))
 
-    @ctx.context
+    @ctx
     def second():
         with use_mode(2):
             results.append(("entered second", ctx.mode))

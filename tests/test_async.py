@@ -10,14 +10,14 @@ def test_context_local_vars_work_for_async():
 
     results = set()
 
-    @ctx.context
+    @ctx
     async def worker(value):
         ctx.value = value
         await asyncio.sleep((10 - value) * 0.01)
         assert value == ctx.value
         results.add(ctx.value)
 
-    @ctx.context
+    @ctx
     def manager():
         ctx.value = -1
         tasks = asyncio.gather(*(worker(i) for i in range(10)))
@@ -37,7 +37,7 @@ def test_context_local_async_reflect_changes_made_downstream():
 
     results = set()
 
-    @ctx.context
+    @ctx
     async def worker(value):
         ctx.value = value
         results.add(ctx.value)
@@ -49,7 +49,7 @@ def test_context_local_async_reflect_changes_made_downstream():
         ctx.value += 1
         results.add(ctx.value)
 
-    @ctx.context
+    @ctx
     def manager():
         ctx.value = -1
         tasks = asyncio.gather(*(worker(i) for i in range(0, 10, 2)))

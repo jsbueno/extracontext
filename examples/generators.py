@@ -37,7 +37,7 @@ def print_mode():
    print(f'Mode {ctx.MODE}')
 
 
-@ctx.context
+@ctx
 def first():
     ctx.MODE = 0
     print('Start first')
@@ -56,7 +56,7 @@ def first():
     print("at end")
     print_mode()
 
-@ctx.context
+@ctx
 def second():
     print('Start second')
     print_mode()

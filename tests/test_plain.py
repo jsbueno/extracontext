@@ -1,7 +1,6 @@
 import gc
 import sys
 from collections.abc import Mapping, Sequence
-from contextlib import contextmanager
 
 import pytest
 
@@ -22,7 +21,7 @@ def test_context_function_holds_unique_value_for_attribute():
 
     ctx = ContextLocal()
 
-    @ctx.context
+    @ctx
     def testcall():
         assert ctx.var1 == 1
         ctx.var1 = 2
@@ -41,7 +40,7 @@ def test_context_inner_function_cant_erase_outter_value():
 
     ctx = ContextLocal()
 
-    @ctx.context
+    @ctx
     def testcall():
         ctx.var1 = 2
         assert ctx.var1 == 2
@@ -57,7 +56,7 @@ def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_at
 
     ctx = ContextLocal()
 
-    @ctx.context
+    @ctx
     def testcall():
         ctx.var1 = 2
         assert ctx.var1 == 2
@@ -86,7 +85,7 @@ def test_context_inner_function_deleting_attribute_can_reassign_it():
 
     ctx = ContextLocal()
 
-    @ctx.context
+    @ctx
     def testcall():
         ctx.var1 = 2
         assert ctx.var1 == 2
@@ -110,7 +109,7 @@ def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassig
 
     ctx = ContextLocal()
 
-    @ctx.context
+    @ctx
     def testcall():
         ctx.var1 = 2
         assert ctx.var1 == 2
@@ -137,7 +136,7 @@ def test_context_granddaugher_works_nice_with_daughter_deleting_attribute():
 
     ctx = ContextLocal()
 
-    @ctx.context
+    @ctx
     def granddaughter():
         with pytest.raises(AttributeError):
             ctx.var1
@@ -145,7 +144,7 @@ def test_context_granddaugher_works_nice_with_daughter_deleting_attribute():
         assert ctx.var1 == 2
 
 
-    @ctx.context
+    @ctx
     def daughter():
         assert ctx.var1 == 1
         del ctx.var1
@@ -164,7 +163,7 @@ def test_each_call_creates_unique_context_and_clean_up():
 
     ctx = ContextLocal()
 
-    @ctx.context
+    @ctx
     def testcall():
         context_keys.update(ctx._registry.keys())
 
@@ -180,7 +179,7 @@ def test_unique_context_for_generators_is_cleaned_up():
 
     ctx = ContextLocal()
 
-    @ctx.context
+    @ctx
     def testcall():
         context_keys.update(k.value for k in ctx._registry.keys())
         yield None
@@ -214,15 +213,15 @@ def recursive_size(obj):
 #def test_abusive_memory_leak():
     #ctx = ContextLocal()
 
-    #@ctx.context
+    #@ctx
     #def func(n):
 
 def test_contexts_keep_separate_variables():
     c1 = ContextLocal()
     c2 = ContextLocal()
 
-    @c1.context
-    @c2.context
+    @c1
+    @c2
     def inner():
         c1.a = 1
         c2.a = 2
@@ -240,7 +239,7 @@ def test_context_dir():
 
     ctx = ContextLocal()
 
-    @ctx.context
+    @ctx
     def testcall():
 
         ctx.var2 = 2

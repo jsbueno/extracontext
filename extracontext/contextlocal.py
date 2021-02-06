@@ -147,7 +147,7 @@ class ContextLocal:
         namespace, _ = self._introspect_registry(name)
         namespace.setdefault("$deleted", set()).add(name)
 
-    def context(self, callable_):
+    def __call__(self, callable_):
         @wraps(callable_)
         def wrapper(*args, **kw):
             f = sys._getframe()
