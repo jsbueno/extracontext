@@ -69,6 +69,7 @@ def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_at
 
         with pytest.raises(AttributeError):
             ctx.var1
+        assert getattr(ctx, "var1", None) is None
 
         # can't be erased again as well.
         with pytest.raises(AttributeError):
@@ -152,8 +153,6 @@ def test_context_granddaugher_works_nice_with_daughter_deleting_attribute():
         with pytest.raises(AttributeError):
             ctx.var1
 
-
-
     ctx.var1 = 1
     daughter()
     assert ctx.var1 == 1
@@ -236,6 +235,23 @@ def test_contexts_keep_separate_variables():
 
     inner()
 
-@pytest.mark.skip
-def test_context_dir(self):
-    pass
+
+def test_context_dir():
+
+    ctx = ContextLocal()
+
+    @ctx.context
+    def testcall():
+
+        ctx.var2 = 2
+        assert "var1" in dir(ctx)
+        assert "var2" in dir(ctx)
+
+        del ctx.var1
+
+    ctx.var1 = 1
+    assert "var1" in dir(ctx)
+    testcall()
+    assert "var1" in dir(ctx)
+    assert "var2" not in dir(ctx)
+

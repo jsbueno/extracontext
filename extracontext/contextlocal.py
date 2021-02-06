@@ -57,7 +57,7 @@ class ContextLocal:
     def __init__(self):
         super().__setattr__("_registry", WeakKeyDictionary())
 
-    def _introspect_registry(self, name=None) -> T.Tuple[dict, T.Tuple[int, int]]:
+    def _introspect_registry(self, name=None, starting_frame=2) -> T.Tuple[dict, T.Tuple[int, int]]:
         """
             returns the first namespace found for this context, if name is None
             else, the first namespace where the name exists. The second return
@@ -67,7 +67,7 @@ class ContextLocal:
             namespace and act accordingly. ("del" needs this information,
             as it can't remove information on an outter namespace)
         """
-        f = sys._getframe(2)
+        f = sys._getframe(starting_frame)
         count = 0
         first_ns = None
         while f:
@@ -169,3 +169,20 @@ class ContextLocal:
 
             return result
         return wrapper
+
+    def __dir__(self):
+        frame_count = 2
+        all_attrs = set()
+        seen_namespaces = set()
+        while True:
+            try:
+                namespace, _ = self._introspect_registry(starting_frame=frame_count)
+            except (ValueError, ContextError):  # ValueError can be raused sys._getframe inside _introspect_registry
+                break
+            frame_count += 1
+            if id(namespace) in seen_namespaces:
+                continue
+            for key, value in namespace.items():
+                if not key.startswith("$") and value is not _sentinel:
+                    all_attrs.add(key)
+        return sorted(all_attrs)
