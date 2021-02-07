@@ -48,6 +48,25 @@ def runner():
     assert results == list(range(10))
 ```
 
+ContextLocal namespaces can also be isolated by context-manager blocks (`with` statement):
+
+```python
+from extracontext import ContextLocal
+
+
+def with_block_example():
+
+    ctx = ContextLocal()
+    ctx.value = 1
+    with ctx:
+        ctx.value = 2
+        assert ctx.value == 2
+
+    assert ctx.value == 1
+
+
+```
+
 Next Steps:
 -----------
  1. Add a context class that uses mapping semantics -
@@ -62,6 +81,8 @@ and app can have a root context with default values
  performance benchmarking. Current implementation is Python code
  all the way and "hides" context values in the frame local variables.
 
- 1. Add (Python's "with" command)'s context manager semantics: currently
- contexts are separated by using an explicit decorator or by entering a
- generator/coroutine
+ 1. Add a way to merge wrappers for different ContextLocal instances on the same function
+
+ 1. Add an "auto" flag - all called functions/generators/co-routines create a child context by default.
+
+ 1. Add support for a descriptor-like variable slot - so that values can trigger code when set or retrieved

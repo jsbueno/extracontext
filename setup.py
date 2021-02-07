@@ -6,7 +6,7 @@ setup(
     author="Joao S. O. Bueno",
     description="Context Variable namespaces supporting generators, asyncio and multi-threading",
     long_description = open("README.md").read(),
-    version="0.2beta1",
+    version="0.2beta2",
     install_requires=[],
     extras_require={
         "dev": ["pytest", "ipython", "black", "pyflakes", "mypy", "pytest-coverage"]

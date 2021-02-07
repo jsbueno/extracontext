@@ -35,7 +35,7 @@ class ContextError(AttributeError):
 _sentinel = object()
 
 
-class _WeakId:
+class _WeakableId:
     __slots__ = ["__weakref__", "value"]
     def __init__(self, v=0):
         if not v:
@@ -75,11 +75,13 @@ class ContextLocal:
             if hf in self._registry:
                 if first_ns is None:
                     first_ns = count
-                namespace = f.f_locals["$contexts"][self._registry[hf]]
-                if name is None or name in namespace:
-                    return namespace, (first_ns, count)
+                registered_namespaces = f.f_locals["$contexts"]
+                for namespace_index in reversed(self._registry[hf]):
+                    namespace = registered_namespaces[namespace_index]
+                    if name is None or name in namespace:
+                        return namespace, (first_ns, count)
+                    count += 1
             f = f.f_back
-            count += 1
 
         if name:
             raise ContextError(f"{name !r} not defined in any previous context")
@@ -87,7 +89,7 @@ class ContextLocal:
 
     def _frameid(self, frame):
         if not "$contexts_salt" in frame.f_locals:
-            frame.f_locals["$contexts_salt"] = _WeakId()
+            frame.f_locals["$contexts_salt"] = _WeakableId()
         return frame.f_locals["$contexts_salt"]
 
 
@@ -95,7 +97,14 @@ class ContextLocal:
         hf = self._frameid(f)
         contexts_list = f.f_locals.setdefault("$contexts", [])
         contexts_list.append({})
-        self._registry[hf] = len(contexts_list) - 1
+        self._registry.setdefault(hf, []).append(len(contexts_list) - 1)
+
+    def _pop_context(self, f):
+        hf = self._frameid(f)
+        context_being_popped = self._registry[hf].pop()
+        contexts_list = f.f_locals["$contexts"]
+        contexts_list[context_being_popped] = None
+
 
     def __getattr__(self, name):
         try:
@@ -117,7 +126,6 @@ class ContextLocal:
             self._register_context(sys._getframe(1))
             namespace, _ = self._introspect_registry()
 
-            # namespace = self._registry[hash(sys._getframe(1))] = {}
         namespace[name] = value
 
 
@@ -153,8 +161,6 @@ class ContextLocal:
             f = sys._getframe()
             self._register_context(f)
             f_id = self._frameid(f)
-            # f = sys._getframe()
-            # self._registry[hash(f)] = {}
             result = _sentinel
             try:
                 result = callable_(*args, **kw)
@@ -169,6 +175,13 @@ class ContextLocal:
 
             return result
         return wrapper
+
+    def __enter__(self):
+        self._register_context(sys._getframe(1))
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._pop_context(sys._getframe(1))
+
 
     def __dir__(self):
         frame_count = 2
@@ -185,4 +198,5 @@ class ContextLocal:
             for key, value in namespace.items():
                 if not key.startswith("$") and value is not _sentinel:
                     all_attrs.add(key)
+            seen_namespaces.add(id(namespace))
         return sorted(all_attrs)

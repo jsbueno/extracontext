@@ -29,6 +29,24 @@ def test_context_local_vars_work_as_decorator():
         assert ctx.value == 1
 
 
+def test_context_local_doesnt_leak_from_generator():
+    ctx = ContextLocal()
+
+    @ctx
+    def gen():
+        ctx.value = 2
+        yield
+        assert ctx.value == 2
+
+    ctx.value = 1
+    g = gen()
+    assert ctx.value == 1
+    next(g)
+    assert ctx.value == 1
+    next(g, None)
+    assert ctx.value == 1
+
+
 def test_context_local_vars_work_for_generators():
 
     ctx = ContextLocal()
