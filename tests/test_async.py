@@ -59,3 +59,33 @@ def test_context_local_async_reflect_changes_made_downstream():
         assert ctx.value == -1
 
     manager()
+
+
+def test_context_isolates_async_loop():
+
+    ctx = ContextLocal()
+    ctx.aa = 1
+    results = []
+
+    @ctx
+    async def aiter():
+        ctx.aa = 3
+        assert ctx.aa == 3
+        print(ctx.aa)
+        assert ctx.aa == 3
+        ctx.aa += 1
+        assert ctx.aa == 4
+        yield 2
+        assert ctx.aa == 4
+
+    @ctx
+    async def entry():
+        ctx.aa = 2
+        counter = 0
+        async for i in aiter():
+            assert ctx.aa == 2 + counter
+            ctx.aa += 10
+            counter += 10
+
+    asyncio.run(entry())
+    assert ctx.aa == 1

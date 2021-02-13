@@ -167,12 +167,13 @@ class ContextLocal:
             finally:
                 if f_id in self._registry:
                     del self._registry[f_id]
-                # Setup context for generator or coroutine if one was returned:
+                # Setup context for generator, async generator or coroutine if one was returned:
                 if result is not _sentinel:
-                    frame = getattr(result, "gi_frame", getattr(result, "cr_frame", None))
-                    if frame:
-                        self._register_context(frame)
-
+                    frame = None
+                    for frame_attr in ("gi_frame", "ag_frame", "cr_frame"):
+                        frame = getattr(result, frame_attr, None)
+                        if frame:
+                            self._register_context(frame)
             return result
         return wrapper
 
