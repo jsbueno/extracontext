@@ -36,6 +36,9 @@ _sentinel = object()
 
 
 class _WeakableId:
+    """Used internally to identify Frames with context data attached using weakrefs
+    """
+
     __slots__ = ["__weakref__", "value"]
     def __init__(self, v=0):
         if not v:
@@ -53,6 +56,31 @@ class _WeakableId:
 
 
 class ContextLocal:
+    """Creates a namespace object whose attributes can keep individual and distinct values for
+    the same key for code running in parallel - either in asyncio tasks, or threads.
+
+    The bennefits are the same one gets by using contextvars.ContextVar from the stdlib as
+    specified on PEP 567. However extracontext.ContextLocal is designed to be easier
+    and more convenient to use - as a single instance can hold values for several
+    keys, just as happens with threading.local objects. And no special getter and
+    setter methods are needed to retrieve the unique value stored in the current
+    context: normal attribute access and assignment works transparently.
+
+    Internally, the current implementation uses a completly different way to
+    keep distinct states where needed: the "locals" mapping for each execution
+    frame is used as storage for the unique values in an async task context, or in
+    a thread. Although not recomended up to know, read/write access to non-local-variables
+    in the "locals" mapping is specified on PEP 558. While that PEP is not
+    final, it is clear in its texts that the capability of using "locals" as
+    a mapping to convey data will be kept and made official.
+
+    References to the frames containing context data is kept using
+    weakreferences, so when a Frame ends up execution, its contents
+    are deleted normally, with no risks of frame data
+    hanging around due to ContextLocal data.
+
+
+    """
 
     def __init__(self):
         super().__setattr__("_registry", WeakKeyDictionary())
