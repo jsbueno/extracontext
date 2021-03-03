@@ -1,21 +1,9 @@
-import threading
-import time
-from collections import deque
+import gc
+
+import pytest
 
 from extracontext import ContextMap
 
-import pytest
-
-consume = deque(maxlen=0).extend
-
-
-import gc
-import sys
-from collections.abc import Mapping, Sequence
-
-import pytest
-
-from extracontext import ContextLocal, ContextError
 
 def test_context_local_vars_work_as_mapping():
     ctx = ContextMap()
@@ -37,7 +25,6 @@ def test_contextmap_function_holds_unique_value_for_attribute():
         assert ctx["var1"] == 2
         del ctx["var1"]
 
-
     ctx["var1"] = 1
     assert ctx["var1"] == 1
     testcall()
@@ -45,7 +32,6 @@ def test_contextmap_function_holds_unique_value_for_attribute():
 
 
 def test_context_inner_function_cant_erase_outter_value():
-    context_keys = set()
 
     ctx = ContextMap()
 
@@ -104,7 +90,6 @@ def test_contextmap_inner_function_deleting_attribute_can_reassign_it():
         ctx["var1"] = 3
         assert ctx["var1"] == 3
 
-
     ctx["var1"] = 1
     testcall()
     # Value deleted in inner context must be available here
@@ -148,7 +133,6 @@ def test_contextmap_granddaugher_works_nice_with_daughter_deleting_attribute():
         ctx["var1"] = 2
         assert ctx["var1"] == 2
 
-
     @ctx
     def daughter():
         assert ctx["var1"] == 1
@@ -160,7 +144,6 @@ def test_contextmap_granddaugher_works_nice_with_daughter_deleting_attribute():
     ctx["var1"] = 1
     daughter()
     assert ctx["var1"] == 1
-
 
 
 def test_contextmap_each_call_creates_unique_context_and_clean_up():
@@ -194,7 +177,6 @@ def test_contextmap_unique_context_for_generators_is_cleaned_up():
         for _ in testcall():
             pass
     gc.collect()
-
 
     assert len(context_keys) == 100
     assert len(list(ctx._registry.keys())) == 0
@@ -242,15 +224,12 @@ def test_contextmap_keys():
 
 
 def test_contextmap_run_method_isolates_context():
-    context_keys = set()
-
     ctx = ContextMap()
 
     def testcall():
         assert ctx["var1"] == 1
         ctx["var1"] = 2
         assert ctx["var1"] == 2
-
 
     ctx["var1"] = 1
     assert ctx["var1"] == 1
@@ -269,4 +248,3 @@ def test_contextmap_mapping_enter_new_context_in_with_block():
         assert ctx["value"] == 2
 
     assert ctx["value"] == 1
-
