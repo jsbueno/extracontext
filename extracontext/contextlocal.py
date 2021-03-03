@@ -82,6 +82,10 @@ class ContextLocal:
 
     """
 
+    # TODO: change _BASEDIST to a property counting the intermediate
+    # methods between subclasses and the methods here.
+    _BASEDIST = 0
+
     def __init__(self):
         super().__setattr__("_registry", WeakKeyDictionary())
 
@@ -95,6 +99,7 @@ class ContextLocal:
             namespace and act accordingly. ("del" needs this information,
             as it can't remove information on an outter namespace)
         """
+        starting_frame += self._BASEDIST
         f = sys._getframe(starting_frame)
         count = 0
         first_ns = None
@@ -151,7 +156,7 @@ class ContextLocal:
         except ContextError:
             # Automatically creates a new namespace if not inside
             # any explicit denominated context:
-            self._register_context(sys._getframe(1))
+            self._register_context(sys._getframe(1 + self._BASEDIST))
             namespace, _ = self._introspect_registry()
 
         namespace[name] = value
@@ -211,6 +216,13 @@ class ContextLocal:
     def __exit__(self, exc_type, exc_value, traceback):
         self._pop_context(sys._getframe(1))
 
+    def _run(self, callable, *args, **kw):
+        """Runs callable with an isolated context
+        no need to decorate the target callable
+        """
+        with self:
+            return callable(*args, **kw)
+
 
     def __dir__(self):
         frame_count = 2
@@ -219,7 +231,7 @@ class ContextLocal:
         while True:
             try:
                 namespace, _ = self._introspect_registry(starting_frame=frame_count)
-            except (ValueError, ContextError):  # ValueError can be raused sys._getframe inside _introspect_registry
+            except (ValueError, ContextError):  # ValueError can be raised sys._getframe inside _introspect_registry
                 break
             frame_count += 1
             if id(namespace) in seen_namespaces:

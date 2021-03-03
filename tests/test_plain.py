@@ -254,3 +254,20 @@ def test_context_dir():
     assert "var1" in dir(ctx)
     assert "var2" not in dir(ctx)
 
+
+def test_context_run_method_isolates_context():
+    context_keys = set()
+
+    ctx = ContextLocal()
+
+    def testcall():
+        assert ctx.var1 == 1
+        ctx.var1 = 2
+        assert ctx.var1 == 2
+        del ctx.var1
+
+
+    ctx.var1 = 1
+    assert ctx.var1 == 1
+    ctx._run(testcall)
+    assert ctx.var1 == 1
