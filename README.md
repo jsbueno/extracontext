@@ -69,10 +69,6 @@ def with_block_example():
 
 Next Steps:
 -----------
- 1. Add a context class that uses mapping semantics -
-current "ContextLocal" can be used as namespace
-as threading.locals - but sometimes a mapping can help more
-
 
  1. Add a way to chain-contexts, so, for example
 and app can have a root context with default values
@@ -86,3 +82,5 @@ and app can have a root context with default values
  1. Add an "auto" flag - all called functions/generators/co-routines create a child context by default.
 
  1. Add support for a descriptor-like variable slot - so that values can trigger code when set or retrieved
+
+ 1.
