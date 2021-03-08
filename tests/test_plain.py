@@ -4,11 +4,15 @@ from collections.abc import Mapping, Sequence
 
 import pytest
 
-from extracontext import ContextLocal, ContextError
+from extracontext import ContextLocal, ContextError, NativeContextLocal
 
 
-def test_context_local_vars_work_as_namespace():
-    ctx = ContextLocal()
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_vars_work_as_namespace(ContextClass):
+    ctx = ContextClass()
     ctx.value = 1
     assert ctx.value == 1
     del ctx.value
