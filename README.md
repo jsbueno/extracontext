@@ -77,10 +77,16 @@ and app can have a root context with default values
  performance benchmarking. Current implementation is Python code
  all the way and "hides" context values in the frame local variables.
 
+ 1. Describe the capabilities of each Context class clearly in a data-scheme,
+ so one gets to know, and how to retrieve classes that can behave like maps, or
+ allow/hide outter context values, work as a full stack, support the context protocol (`with` command),
+ etc... (this is more pressing since stlib contextvar backed Context classes will
+         not allow for some of the capabilities in the pure-Python reimplementation in "ContextLocal")
+
  1. Add a way to merge wrappers for different ContextLocal instances on the same function
 
  1. Add an "auto" flag - all called functions/generators/co-routines create a child context by default.
 
  1. Add support for a descriptor-like variable slot - so that values can trigger code when set or retrieved
 
- 1.
+ 1. Shared values and locks: values that are guarranteed to be the same across tasks/threads, and a lock mechanism allowing atomic operations with these values. (extra bonus: try to develop a deadlock-proof lock)

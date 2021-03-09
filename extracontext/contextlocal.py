@@ -86,7 +86,7 @@ class ContextLocal:
     # methods between subclasses and the methods here.
     _BASEDIST = 0
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__setattr__("_registry", WeakKeyDictionary())
 
     def _introspect_registry(self, name=None, starting_frame=2) -> T.Tuple[dict, T.Tuple[int, int]]:
@@ -216,12 +216,12 @@ class ContextLocal:
     def __exit__(self, exc_type, exc_value, traceback):
         self._pop_context(sys._getframe(1))
 
-    def _run(self, callable, *args, **kw):
+    def _run(self, callable_, *args, **kw):
         """Runs callable with an isolated context
         no need to decorate the target callable
         """
         with self:
-            return callable(*args, **kw)
+            return callable_(*args, **kw)
 
 
     def __dir__(self):

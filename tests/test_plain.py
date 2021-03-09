@@ -20,48 +20,99 @@ def test_context_local_vars_work_as_namespace(ContextClass):
         assert ctx.value == 1
 
 
-def test_context_function_holds_unique_value_for_attribute():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_function_holds_unique_value_for_attribute(ContextClass):
     context_keys = set()
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
+    called = False
+
 
     @ctx
     def testcall():
+        nonlocal called
+        called = True
         assert ctx.var1 == 1
         ctx.var1 = 2
         assert ctx.var1 == 2
         del ctx.var1
 
+    ctx.var1 = 1
+    assert ctx.var1 == 1
+    testcall()
+    assert called
+    assert ctx.var1 == 1
+
+
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_once_value_in_function_is_erased_outer_value_gets_visible_back(ContextClass):
+    context_keys = set()
+
+    ctx = ContextClass()
+    called = False
+
+
+    @ctx
+    def testcall():
+        nonlocal called
+        called = True
+        assert ctx.var1 == 1
+        ctx.var1 = 2
+        assert ctx.var1 == 2
+        del ctx.var1
+        assert ctx.var1 == 1
 
     ctx.var1 = 1
     assert ctx.var1 == 1
     testcall()
+    assert called
     assert ctx.var1 == 1
 
 
-def test_context_inner_function_cant_erase_outter_value():
-    context_keys = set()
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_inner_function_cant_erase_outter_value(ContextClass):
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
+    called = False
 
     @ctx
     def testcall():
+        nonlocal called
+        called = True
         ctx.var1 = 2
         assert ctx.var1 == 2
         del ctx.var1
 
     ctx.var1 = 1
     testcall()
+    assert called
     assert ctx.var1 == 1
 
 
-def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_attribute_back():
-    context_keys = set()
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_attribute_back(ContextClass):
 
-    ctx = ContextLocal()
 
+
+    ctx = ContextClass()
+
+    called = False
     @ctx
     def testcall():
+        nonlocal called
+        called = True
         ctx.var1 = 2
         assert ctx.var1 == 2
         # removes newly assigned value
@@ -80,6 +131,7 @@ def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_at
 
     ctx.var1 = 1
     testcall()
+    assert called
     # Value deleted in inner context must be available here
     assert ctx.var1 == 1
 

@@ -70,7 +70,7 @@ class NativeContextLocal:
     def __call__(self, callable_):
         @wraps(callable_)
         def wrapper(*args, **kw):
-            pass
+            return self._run(callable_, *args, **kw)
         return wrapper
 
     def __enter__(self):
@@ -79,12 +79,12 @@ class NativeContextLocal:
     def __exit__(self, exc_type, exc_value, traceback):
         pass
 
-    def _run(self, callable, *args, **kw):
+    def _run(self, callable_, *args, **kw):
         """Runs callable with an isolated context
         no need to decorate the target callable
         """
-        with self:
-            return callable(*args, **kw)
+        new_context = copy_context()
+        return new_context.run(callable_, *args, **kw)
 
 
     def __dir__(self):
