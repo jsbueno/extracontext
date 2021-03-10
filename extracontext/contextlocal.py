@@ -17,11 +17,14 @@ visible inside  the decorated callable.
 
 """
 
+from __future__ import annotations
+
 import uuid
 import sys
 import typing as T
 
 from functools import wraps
+from types import FrameType
 from weakref import WeakKeyDictionary
 
 
@@ -89,7 +92,7 @@ class ContextLocal:
     def __init__(self) -> None:
         super().__setattr__("_registry", WeakKeyDictionary())
 
-    def _introspect_registry(self, name=None, starting_frame=2) -> T.Tuple[dict, T.Tuple[int, int]]:
+    def _introspect_registry(self, name: T.Optional[str]=None, starting_frame: int=2) -> T.Tuple[dict, T.Tuple[int, int]]:
         """
             returns the first namespace found for this context, if name is None
             else, the first namespace where the name exists. The second return
@@ -100,7 +103,7 @@ class ContextLocal:
             as it can't remove information on an outter namespace)
         """
         starting_frame += self._BASEDIST
-        f = sys._getframe(starting_frame)
+        f: T.Optional[FrameType] = sys._getframe(starting_frame)
         count = 0
         first_ns = None
         while f:
@@ -120,26 +123,26 @@ class ContextLocal:
             raise ContextError(f"{name !r} not defined in any previous context")
         raise ContextError("No previous context set")
 
-    def _frameid(self, frame):
+    def _frameid(self, frame: FrameType) -> _WeakableId:
         if not "$contexts_salt" in frame.f_locals:
             frame.f_locals["$contexts_salt"] = _WeakableId()
         return frame.f_locals["$contexts_salt"]
 
 
-    def _register_context(self, f):
+    def _register_context(self, f: FrameType) -> None:
         hf = self._frameid(f)
         contexts_list = f.f_locals.setdefault("$contexts", [])
         contexts_list.append({})
         self._registry.setdefault(hf, []).append(len(contexts_list) - 1)
 
-    def _pop_context(self, f):
+    def _pop_context(self, f: FrameType) -> None:
         hf = self._frameid(f)
         context_being_popped = self._registry[hf].pop()
         contexts_list = f.f_locals["$contexts"]
         contexts_list[context_being_popped] = None
 
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> T.Any:
         try:
             namespace, _ = self._introspect_registry(name)
             result = namespace[name]
@@ -150,7 +153,7 @@ class ContextLocal:
             raise AttributeError(f"Attribute not set: {name}")
 
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: T.Any) -> None:
         try:
             namespace, _ = self._introspect_registry()
         except ContextError:
@@ -162,7 +165,7 @@ class ContextLocal:
         namespace[name] = value
 
 
-    def __delattr__(self, name):
+    def __delattr__(self, name: str) -> None:
         try:
             namespace, (topmost_ns, found_ns) = self._introspect_registry(name)
         except ContextError:
@@ -188,7 +191,7 @@ class ContextLocal:
         namespace, _ = self._introspect_registry(name)
         namespace.setdefault("$deleted", set()).add(name)
 
-    def __call__(self, callable_):
+    def __call__(self, callable_: T.Callable) -> T.Callable:
         @wraps(callable_)
         def wrapper(*args, **kw):
             f = sys._getframe()
@@ -210,10 +213,11 @@ class ContextLocal:
             return result
         return wrapper
 
-    def __enter__(self):
+    def __enter__(self) -> ContextLocal:
         self._register_context(sys._getframe(1))
+        return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         self._pop_context(sys._getframe(1))
 
     def _run(self, callable_, *args, **kw):
@@ -224,7 +228,7 @@ class ContextLocal:
             return callable_(*args, **kw)
 
 
-    def __dir__(self):
+    def __dir__(self) -> T.List[str]:
         frame_count = 2
         all_attrs = set()
         seen_namespaces = set()
