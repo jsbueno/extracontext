@@ -181,14 +181,20 @@ class ContextLocal:
 
                 else:
                     # Remove topmost name assignemnt, and outer value is exposed
-                    del namespace[name]
+                    # ("one_level" attribute stacking behavior as described in 'features.py'
+                    # disbled as unecessaryly complex):
+                    # del namespace[name]
+
+                    # To preserve  "entry_only" behavior:
+                    namespace.setdefault("$deleted", set()).add(name)
+                    setattr(self, name, _sentinel)
                 return
             # value is already shadowed:
             raise AttributeError(name)
 
         # Name is found, but it is not on the top-most level, so attribute is shadowed:
         setattr(self, name, _sentinel)
-        namespace, _ = self._introspect_registry(name)
+        # fossil: namespace, _ = self._introspect_registry(name)
         namespace.setdefault("$deleted", set()).add(name)
 
     def __call__(self, callable_: T.Callable) -> T.Callable:

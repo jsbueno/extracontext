@@ -65,6 +65,8 @@ class NativeContextLocal:
 
 
     def __delattr__(self, name):
+        if getattr(self, name, _sentinel) is _sentinel:
+            raise AttributeError(f"Attribute not set: {name}")
         setattr(self, name, _sentinel)
 
     def __call__(self, callable_):
@@ -74,10 +76,10 @@ class NativeContextLocal:
         return wrapper
 
     def __enter__(self):
-        pass
+        raise NotImplementedError("Context manager behavior not implemented by native ContextVars implementation")
 
     def __exit__(self, exc_type, exc_value, traceback):
-        pass
+        raise NotImplementedError("Context manager behavior not implemented by native ContextVars implementation")
 
     def _run(self, callable_, *args, **kw):
         """Runs callable with an isolated context

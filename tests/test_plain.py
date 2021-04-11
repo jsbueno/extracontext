@@ -101,7 +101,15 @@ def test_context_inner_function_cant_erase_outter_value(ContextClass):
 
 @pytest.mark.parametrize(["ContextClass"], [
     (ContextLocal,),
-    # (NativeContextLocal,)
+    (NativeContextLocal,)
+])
+def test_dir_context_should_not_show_deleted_attributes(ContextClass):
+    pass
+
+
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
 ])
 def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_attribute_back(ContextClass):
 
@@ -118,10 +126,6 @@ def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_at
         assert ctx.var1 == 2
         # removes newly assigned value
         del ctx.var1
-        assert ctx.var1 == 1
-        # removes outter-visible value:
-        del ctx.var1
-
         with pytest.raises(AttributeError):
             ctx.var1
         assert getattr(ctx, "var1", None) is None
@@ -147,13 +151,10 @@ def test_context_inner_function_deleting_attribute_can_reassign_it():
         ctx.var1 = 2
         assert ctx.var1 == 2
         del ctx.var1
-        assert ctx.var1 == 1
-        del ctx.var1
         with pytest.raises(AttributeError):
             ctx.var1
         ctx.var1 = 3
         assert ctx.var1 == 3
-
 
     ctx.var1 = 1
     testcall()
@@ -171,8 +172,7 @@ def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassig
         ctx.var1 = 2
         assert ctx.var1 == 2
         del ctx.var1
-        assert ctx.var1 == 1
-        del ctx.var1
+
         with pytest.raises(AttributeError):
             ctx.var1
         ctx.var1 = 3
