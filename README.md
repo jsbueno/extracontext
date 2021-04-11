@@ -8,7 +8,7 @@ in asyncio, using generators, or multiple-threads.
 
 
 These are meant to be simpler to use and work in more scenarios than
-Python's contextvars.
+Python's contextvars.(PEP 567)
 
 Usage:
 
@@ -66,16 +66,23 @@ def with_block_example():
 
 
 ```
+In Progress:
+-----------
+
+ 1. A "native" contextvars.ContextVar backed class, and add some
+ performance benchmarking. Current implementation is Python code
+ all the way and "hides" context values in the frame local variables.
+
 
 Next Steps:
 -----------
 
+ 1. Automatically enter a new inner-scope in each function call:
+     no need to worry about decorators, context-managers or whatever to keep
+     the higher-level values safe.
+
  1. Add a way to chain-contexts, so, for example
 and app can have a root context with default values
-
- 1. Add a contextvars.ContextVar backed class, and add some
- performance benchmarking. Current implementation is Python code
- all the way and "hides" context values in the frame local variables.
 
  1. Describe the capabilities of each Context class clearly in a data-scheme,
  so one gets to know, and how to retrieve classes that can behave like maps, or

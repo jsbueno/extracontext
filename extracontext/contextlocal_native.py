@@ -90,4 +90,4 @@ class NativeContextLocal:
 
 
     def __dir__(self):
-        return list(self._registry.keys())
+        return list(key for key, value in self._registry.items() if value.get() is not _sentinel)

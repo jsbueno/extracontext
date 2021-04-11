@@ -103,14 +103,6 @@ def test_context_inner_function_cant_erase_outter_value(ContextClass):
     (ContextLocal,),
     (NativeContextLocal,)
 ])
-def test_dir_context_should_not_show_deleted_attributes(ContextClass):
-    pass
-
-
-@pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
-    (NativeContextLocal,)
-])
 def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_attribute_back(ContextClass):
 
 
@@ -310,6 +302,68 @@ def test_context_dir():
     testcall()
     assert "var1" in dir(ctx)
     assert "var2" not in dir(ctx)
+
+
+
+
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_dir_context_should_not_show_deleted_attributes(ContextClass):
+    ctx = ContextClass()
+
+    called = False
+    @ctx
+    def testcall():
+        nonlocal called
+        called = True
+        assert set(dir(ctx)) == {"var1",}
+        ctx.var1 = 2
+        assert set(dir(ctx)) == {"var1",}
+        # removes newly assigned value
+        del ctx.var1
+        assert dir(ctx) == []
+
+    ctx.var1 = 1
+    testcall()
+    assert called
+    # Value deleted in inner context must be available here
+    assert set(dir(ctx)) == {"var1",}
+    assert ctx.var1 == 1
+
+
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_dir_context_should_work_with_intermediate_deleted_attribute(ContextClass):
+    ctx = ContextClass()
+
+    called = False
+    @ctx
+    def testcall_level2():
+        nonlocal called
+        called = True
+        assert dir(ctx) == []
+        ctx.var1 = 2
+        assert set(dir(ctx)) == {"var1",}
+
+    @ctx
+    def testcall():
+        del ctx.var1
+        assert dir(ctx) == []
+        testcall_level2()
+        assert dir(ctx) == []
+
+    ctx.var1 = 1
+    testcall()
+    assert called
+    # Value deleted in inner context must be available here
+    assert ctx.var1 == 1
+    assert set(dir(ctx)) == {"var1",}
+
+
 
 
 def test_context_run_method_isolates_context():
