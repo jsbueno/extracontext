@@ -111,8 +111,6 @@ def test_context_in_with_block_deleted_var_must_be_undeleted_outside():
         ctx.value = 2
         assert ctx.value == 2
         del ctx.value
-        assert ctx.value == 1
-        del ctx.value
         with pytest.raises(AttributeError):
             assert ctx.value
 
@@ -128,8 +126,6 @@ def test_context_in_with_block_deleted_var_must_be_undeleted_outside_even_after_
     with ctx:
         ctx.value = 2
         assert ctx.value == 2
-        del ctx.value
-        assert ctx.value == 1
         del ctx.value
         with pytest.raises(AttributeError):
             assert ctx.value

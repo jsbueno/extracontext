@@ -56,9 +56,6 @@ def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_at
         assert ctx["var1"] == 2
         # removes newly assigned value
         del ctx["var1"]
-        assert ctx["var1"] == 1
-        # removes outter-visible value:
-        del ctx["var1"]
 
         with pytest.raises(KeyError):
             ctx["var1"]
@@ -83,8 +80,6 @@ def test_contextmap_inner_function_deleting_attribute_can_reassign_it():
         ctx["var1"] = 2
         assert ctx["var1"] == 2
         del ctx["var1"]
-        assert ctx["var1"] == 1
-        del ctx["var1"]
         with pytest.raises(KeyError):
             ctx["var1"]
         ctx["var1"] = 3
@@ -104,8 +99,6 @@ def test_contextmap_inner_function_reassigning_deleted_value_on_deletion_of_reas
     def testcall():
         ctx["var1"] = 2
         assert ctx["var1"] == 2
-        del ctx["var1"]
-        assert ctx["var1"] == 1
         del ctx["var1"]
         with pytest.raises(KeyError):
             ctx["var1"]
