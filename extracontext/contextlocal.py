@@ -11,7 +11,7 @@ that should hold their own states with that instance's `context` method -
 
 and use the instance as namespace for private variables that will be local
 and non-local until entering another callable decorated
-with `intance.context` - that will create a new, separated scope
+with that instance - that will create a new, separated scope
 visible inside  the decorated callable.
 
 
@@ -72,7 +72,7 @@ class ContextLocal:
     Internally, the current implementation uses a completly different way to
     keep distinct states where needed: the "locals" mapping for each execution
     frame is used as storage for the unique values in an async task context, or in
-    a thread. Although not recomended up to know, read/write access to non-local-variables
+    a thread. Although not recomended up to now, read/write access to non-local-variables
     in the "locals" mapping is specified on PEP 558. While that PEP is not
     final, it is clear in its texts that the capability of using "locals" as
     a mapping to convey data will be kept and made official.

@@ -5,6 +5,7 @@ setup(
     name="extracontext",
     author="Joao S. O. Bueno",
     description="Context Variable namespaces supporting generators, asyncio and multi-threading",
+    packages=["extracontext"],
     long_description = open("README.md").read(),
     version="0.2beta2",
     install_requires=[],

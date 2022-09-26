@@ -3,7 +3,6 @@ import threading
 
 from extracontext import ContextLocal
 
-
 def test_context_local_vars_work_for_async():
 
 
@@ -15,27 +14,24 @@ def test_context_local_vars_work_for_async():
     async def worker(value):
         ctx.value = value
         await asyncio.sleep((10 - value) * 0.01)
-
         assert value == ctx.value
         results.add(ctx.value)
 
     @ctx
-    def manager():
+    async def manager():
         ctx.value = -1
         tasks = asyncio.gather(*(worker(i) for i in range(10)))
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(tasks)
+        await tasks
         assert all(i in results for i in range(10))
         assert ctx.value == -1
 
-    manager()
+    asyncio.run(manager())
 
 
 def test_threading_local_vars_do_not_work_for_async():
     """This is an anti-test, just showing how threading local just
     do not work for async tasks:
     """
-
 
     ctx = threading.local()
 
@@ -54,16 +50,15 @@ def test_threading_local_vars_do_not_work_for_async():
             inner_errors += 1
         results.add(ctx.value)
 
-    def manager():
+    async def manager():
         nonlocal missing_values
         ctx.value = -1
         tasks = asyncio.gather(*(worker(i) for i in range(10)))
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(tasks)
+        await tasks
         missing_values = set(range(10)) - results
         assert ctx.value != -1
 
-    manager()
+    asyncio.run(manager())
     assert inner_errors > 0
     assert missing_values
 
@@ -71,6 +66,11 @@ def test_threading_local_vars_do_not_work_for_async():
 
 
 def test_context_local_async_reflect_changes_made_downstream():
+    """New tasks, inside "gather" call can't effect ctx as defined in manager.
+
+    inside the same task, non-decorated co-routine affects CTX. If it were
+    decorated with @ctx, it would not change the value visible in the calling "worker" co-routine.
+    """
 
 
     ctx = ContextLocal()
@@ -90,15 +90,14 @@ def test_context_local_async_reflect_changes_made_downstream():
         results.add(ctx.value)
 
     @ctx
-    def manager():
+    async def manager():
         ctx.value = -1
         tasks = asyncio.gather(*(worker(i) for i in range(0, 10, 2)))
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(tasks)
+        await tasks
         assert all(i in results for i in range(10))
         assert ctx.value == -1
 
-    manager()
+    asyncio.run(manager())
 
 
 def test_context_isolates_async_loop():
