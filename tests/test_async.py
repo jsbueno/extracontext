@@ -1,23 +1,27 @@
 import asyncio
 import threading
 
-from extracontext import ContextLocal
+from extracontext import ContextLocal, NativeContextLocal
 
-def test_context_local_vars_work_for_async():
+import pytest
 
+@pytest.mark.parametrize("CtxLocalCls", [ContextLocal, NativeContextLocal])
+def test_context_local_vars_work_for_async(CtxLocalCls):
 
-    ctx = ContextLocal()
+    # from types import SimpleNamespace
+    ctx = CtxLocalCls()
+    # ctx = SimpleNamespace() # <- uncomment to check "contextvarless" behavior.
 
     results = set()
 
-    @ctx
+    #@ctx
     async def worker(value):
         ctx.value = value
         await asyncio.sleep((10 - value) * 0.01)
         assert value == ctx.value
         results.add(ctx.value)
 
-    @ctx
+    #@ctx
     async def manager():
         ctx.value = -1
         tasks = asyncio.gather(*(worker(i) for i in range(10)))
@@ -65,7 +69,8 @@ def test_threading_local_vars_do_not_work_for_async():
 
 
 
-def test_context_local_async_reflect_changes_made_downstream():
+@pytest.mark.parametrize("CtxLocalCls", [ContextLocal, NativeContextLocal])
+def test_context_local_async_reflect_changes_made_downstream(CtxLocalCls):
     """New tasks, inside "gather" call can't effect ctx as defined in manager.
 
     inside the same task, non-decorated co-routine affects CTX. If it were
@@ -73,7 +78,7 @@ def test_context_local_async_reflect_changes_made_downstream():
     """
 
 
-    ctx = ContextLocal()
+    ctx = CtxLocalCls()
 
     results = set()
 
@@ -81,8 +86,17 @@ def test_context_local_async_reflect_changes_made_downstream():
     async def worker(value):
         ctx.value = value
         results.add(ctx.value)
+        await isolated_second_stage_worker()
+        assert ctx.value == value
+
         await second_stage_worker()
         assert ctx.value == value + 1
+
+    @ctx
+    async def isolated_second_stage_worker():
+        await asyncio.sleep((10 - ctx.value) * 0.01)
+        ctx.value += 1
+        results.add(ctx.value)
 
     async def second_stage_worker():
         await asyncio.sleep((10 - ctx.value) * 0.01)
