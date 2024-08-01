@@ -21,14 +21,6 @@ import contextvars
 __author__ = "João S. O. Bueno"
 __license__ = "LGPL v. 3.0+"
 
-class ContextError(AttributeError):
-    pass
-
-class TopLevelAbort(Exception):
-    ...
-
-class ResetToTopLevel(BaseException):
-    ...
 
 _sentinel = object()
 
