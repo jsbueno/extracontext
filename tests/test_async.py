@@ -133,9 +133,13 @@ def test_nativecontext_local_works_with_tasks():
     assert ctx.value == 5
 
 
-def test_context_isolates_async_loop():
+@pytest.mark.parametrize("CtxLocalCls", [
+    ContextLocal,
+    pytest.param(NativeContextLocal, marks=pytest.mark.xfail(raises=NotImplementedError))
+])
+def test_context_isolates_async_loop(CtxLocalCls):
 
-    ctx = ContextLocal()
+    ctx = CtxLocalCls()
     ctx.aa = 1
     results = []
 

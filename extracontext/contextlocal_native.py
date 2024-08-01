@@ -101,6 +101,8 @@ class NativeContextLocal:
         result = new_context.run(callable_, *args, **kw)
         if inspect.isawaitable(result):
             result = self._awaitable_wrapper(result, new_context)
+        elif inspect.isasyncgen(result):
+            raise NotImplementedError("NativeContextLocal doesn't yet work with async generators")
         return result
 
     @staticmethod
