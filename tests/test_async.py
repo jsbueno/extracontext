@@ -67,8 +67,6 @@ def test_threading_local_vars_do_not_work_for_async():
     assert missing_values
 
 
-
-
 @pytest.mark.parametrize("CtxLocalCls", [ContextLocal, NativeContextLocal])
 def test_context_local_async_reflect_changes_made_downstream(CtxLocalCls):
     """New tasks, inside "gather" call can't effect ctx as defined in manager.
@@ -112,6 +110,27 @@ def test_context_local_async_reflect_changes_made_downstream(CtxLocalCls):
         assert ctx.value == -1
 
     asyncio.run(manager())
+    assert all(i in results for i in range(10))
+
+
+def test_nativecontext_local_works_with_tasks():
+    ctx = NativeContextLocal()
+
+    ctx.value = 5
+    @ctx
+    async def stage1():
+        ctx.value = 23
+
+    async def manager():
+        ctx.value = 42
+        task = asyncio.create_task(stage1())
+        await asyncio.sleep(0.01)
+        await task
+        await asyncio.sleep(0.01)
+        assert ctx.value == 42
+
+    asyncio.run(manager())
+    assert ctx.value == 5
 
 
 def test_context_isolates_async_loop():
