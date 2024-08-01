@@ -105,8 +105,6 @@ def test_context_inner_function_cant_erase_outter_value(ContextClass):
 ])
 def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_attribute_back(ContextClass):
 
-
-
     ctx = ContextClass()
 
     called = False
@@ -133,10 +131,14 @@ def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_at
     assert ctx.var1 == 1
 
 
-def test_context_inner_function_deleting_attribute_can_reassign_it():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_inner_function_deleting_attribute_can_reassign_it(ContextClass):
     context_keys = set()
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     @ctx
     def testcall():
@@ -154,10 +156,14 @@ def test_context_inner_function_deleting_attribute_can_reassign_it():
     assert ctx.var1 == 1
 
 
-def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassignemnt_should_not_see_outer_value():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassignemnt_should_not_see_outer_value(ContextClass):
     context_keys = set()
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     @ctx
     def testcall():
@@ -179,11 +185,14 @@ def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassig
     # Value deleted in inner context must be available here
     assert ctx.var1 == 1
 
-
-def test_context_granddaugher_works_nice_with_daughter_deleting_attribute():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_granddaugher_works_nice_with_daughter_deleting_attribute(ContextClass):
     context_keys = set()
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     @ctx
     def granddaughter():
@@ -206,7 +215,7 @@ def test_context_granddaugher_works_nice_with_daughter_deleting_attribute():
     assert ctx.var1 == 1
 
 
-
+# Python implementation only:
 def test_each_call_creates_unique_context_and_clean_up():
     context_keys = set()
 
