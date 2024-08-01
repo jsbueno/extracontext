@@ -57,7 +57,6 @@ class NativeContextLocal:
         self._et_registry = {}
 
 
-
     def __getattr__(self, name):
         var = self._et_registry.get(name, None)
         if var is None:
@@ -112,58 +111,3 @@ class NativeContextLocal:
 
     def __dir__(self):
         return list(key for key, value in self._registry.items() if value.get() is not _sentinel)
-
-class _Context:
-    """ HACK: Allows the use of Python contextvar functionality
-    within a context manager (used by the `with` statement),
-    without having to resort to code to copy the context, and have a trampoline function
-    to change context entries, before making a call needing
-    the nested values.
-
-    Disclaimer: the context copy and trampoline are still needed,
-    but are internal to the uber-hacky, trace-setting, Frame fiddling implmentation
-    herein implemented
-    """
-    frame_tracker = contextvars.ContextVar("tracker", default=False)
-
-
-    def jumper(self, caller_frame):
-        self.frame_tracker.set(self.tracker, caller_frame)
-        sys.settrace(self.trace_call)
-        code = caller_frame.f_code
-
-        function = FunctionType(code, caller_frame.f_globals, closure=())
-        argcount = code.co_argcount
-        kwargcount = code.co_kwonlyargcount
-
-        # Code to call a function recreated from the code object, passing
-        #bogus numeric values. (If someone had the brilliant idea
-                               #of enforcing annotations at runtime
-                               #this will break)
-
-        # settrace
-        try:
-            result = function(*range(argcount), **{k: v for k, v in zip(code.co_varnames[argcount: argcount + kwargcount], range(kwargcount))})
-        except ResetToTopLevel: # raised on nested __exit__
-            pass
-        sys.settrace(None)
-        return
-
-    def __enter__(self):
-        if ctx:=cls.frame_tracker.get():
-            ...
-            return ctx
-        ctx = contextvars.copy_context()
-        frame = sys._getframe(1)
-        ctx.run(self.jumper, frame)
-        # TODO: raising TopLevelAbort won't do-
-        # the settrace "goto" trick has to be used again
-        raise ToplevelAbort()
-    def __exit__(self, exc_type, exc_value, tb):
-        if exc_type is ToplevelAbort:
-            # TODO: update caller frame locals
-            return True
-        if ctx:=cls.tracker.get():
-            frame = sys._getframe(1)
-            self.frame_tracker.get().f_locals.update(frame.f_locals)
-            raise ResetToTopLevel
