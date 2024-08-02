@@ -116,7 +116,10 @@ class NativeContextLocal:
             except Exception as exc:
                 # for debugging times: this will be hard without a break here!
                 # print(exc)
-                value = ctx_copy.run(generator.throw, exc)
+                try:
+                    value = ctx_copy.run(generator.throw, exc)
+                except StopIteration as stop:
+                    return stop.value
 
     @staticmethod
     async def _awaitable_wrapper(coro, ctx_copy):

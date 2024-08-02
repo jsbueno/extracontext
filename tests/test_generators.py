@@ -59,6 +59,66 @@ def test_context_local_doesnt_leak_from_generator(ContextClass):
     (ContextLocal,),
     (NativeContextLocal,)
 ])
+def test_context_local_works_with_generator_send(ContextClass):
+    ctx = ContextClass()
+
+    sentinel = object()
+
+    @ctx
+    def gen():
+        ctx.value = 2
+        value = yield
+        assert value is not None
+        assert ctx.value == 2
+        return value
+
+    ctx.value = 1
+    g = gen()
+    assert ctx.value == 1
+    next(g)
+    assert ctx.value == 1
+    try:
+        g.send(sentinel)
+    except StopIteration as stop:
+        assert stop.value is sentinel
+    else:
+        assert False, "StopIteration not raised"
+    assert ctx.value == 1
+
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_works_with_generator_throw(ContextClass):
+    ctx = ContextClass()
+
+    sentinel = object()
+
+    @ctx
+    def gen():
+        ctx.value = 2
+        with pytest.raises(RuntimeError):
+            value = yield
+        assert ctx.value == 2
+
+    ctx.value = 1
+    g = gen()
+    assert ctx.value == 1
+    next(g)
+    assert ctx.value == 1
+    try:
+        g.throw(RuntimeError())
+    except StopIteration as stop:
+        pass
+    else:
+        assert False, "StopIteration not raised"
+    assert ctx.value == 1
+
+
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
 def test_context_local_vars_work_for_generators(ContextClass):
 
     ctx = ContextClass()
