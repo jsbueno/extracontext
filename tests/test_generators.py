@@ -13,11 +13,15 @@ from contextlib import contextmanager
 
 import pytest
 
-from extracontext import ContextLocal, ContextError
+from extracontext import ContextLocal, ContextError, NativeContextLocal
 
 
-def test_context_local_vars_work_as_decorator():
-    ctx = ContextLocal()
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_vars_work_as_decorator(ContextClass):
+    ctx = ContextClass()
 
     @ctx
     def func():
@@ -29,8 +33,12 @@ def test_context_local_vars_work_as_decorator():
         assert ctx.value == 1
 
 
-def test_context_local_doesnt_leak_from_generator():
-    ctx = ContextLocal()
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_doesnt_leak_from_generator(ContextClass):
+    ctx = ContextClass()
 
     @ctx
     def gen():
@@ -47,9 +55,13 @@ def test_context_local_doesnt_leak_from_generator():
     assert ctx.value == 1
 
 
-def test_context_local_vars_work_for_generators():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_vars_work_for_generators(ContextClass):
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     results  = []
 
@@ -61,7 +73,6 @@ def test_context_local_vars_work_for_generators():
             yield
         finally:
             ctx.mode = previous
-
 
     @ctx
     def first():

@@ -53,7 +53,10 @@ class NativeContextLocal:
         var = self._et_registry.get(name, None)
         if var is None:
             raise AttributeError(f"Attribute not set: {name}")
-        value = var.get()
+        try:
+            value = var.get()
+        except LookupError as error:
+            raise AttributeError from error
         if value is _sentinel:
             raise AttributeError(f"Attribute not set: {name}")
         return value
@@ -93,9 +96,27 @@ class NativeContextLocal:
         result = new_context.run(callable_, *args, **kw)
         if inspect.isawaitable(result):
             result = self._awaitable_wrapper(result, new_context)
+        elif inspect.isgenerator(result):
+            result = self._generator_wrapper(result, new_context)
         elif inspect.isasyncgen(result):
             raise NotImplementedError("NativeContextLocal doesn't yet work with async generators")
         return result
+
+    @staticmethod
+    def _generator_wrapper(generator, ctx_copy):
+        value = None
+        while True:
+            try:
+                if value is None:
+                    value = yield ctx_copy.run(next, generator)
+                else:
+                    value = ctx_copy.run(generator.send, value)
+            except StopIteration as stop:
+                return stop.value
+            except Exception as exc:
+                # for debugging times: this will be hard without a break here!
+                # print(exc)
+                value = ctx_copy.run(generator.throw, exc)
 
     @staticmethod
     async def _awaitable_wrapper(coro, ctx_copy):
