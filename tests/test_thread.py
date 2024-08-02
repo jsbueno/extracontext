@@ -2,15 +2,20 @@ import threading
 import time
 from collections import deque
 
-from extracontext import ContextLocal
+import pytest
+
+from extracontext import ContextLocal, NativeContextLocal
 
 consume = deque(maxlen=0).extend
 
 
-def test_context_local_vars_work_for_threads():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_vars_work_for_threads(ContextClass):
 
-
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     results = set()
 
