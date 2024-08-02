@@ -110,7 +110,7 @@ class NativeContextLocal:
                 if value is None:
                     value = yield ctx_copy.run(next, generator)
                 else:
-                    value = ctx_copy.run(generator.send, value)
+                    value = yield ctx_copy.run(generator.send, value)
             except StopIteration as stop:
                 return stop.value
             except Exception as exc:

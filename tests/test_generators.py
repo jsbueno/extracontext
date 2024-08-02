@@ -70,6 +70,7 @@ def test_context_local_works_with_generator_send(ContextClass):
         value = yield
         assert value is not None
         assert ctx.value == 2
+        yield value
         return value
 
     ctx.value = 1
@@ -77,8 +78,10 @@ def test_context_local_works_with_generator_send(ContextClass):
     assert ctx.value == 1
     next(g)
     assert ctx.value == 1
+    value = g.send(sentinel)
+    assert value is sentinel
     try:
-        g.send(sentinel)
+        next(g)
     except StopIteration as stop:
         assert stop.value is sentinel
     else:
