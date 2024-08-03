@@ -181,4 +181,4 @@ class NativeContextLocal:
                 except StopAsyncIteration as stop:
                     break
     def __dir__(self):
-        return list(key for key, value in self._registry.items() if value.get() is not _sentinel)
+        return list(key for key, value in self._et_registry.items() if value.get() is not _sentinel)
