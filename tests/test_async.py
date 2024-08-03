@@ -135,7 +135,7 @@ def test_nativecontext_local_works_with_tasks():
 
 @pytest.mark.parametrize("CtxLocalCls", [
     ContextLocal,
-    pytest.param(NativeContextLocal, marks=pytest.mark.xfail(raises=NotImplementedError))
+    pytest.param(NativeContextLocal) #, marks=pytest.mark.xfail(raises=NotImplementedError))
 ])
 def test_context_isolates_async_loop(CtxLocalCls):
 
@@ -146,8 +146,6 @@ def test_context_isolates_async_loop(CtxLocalCls):
     @ctx
     async def aiter():
         ctx.aa = 3
-        assert ctx.aa == 3
-        print(ctx.aa)
         assert ctx.aa == 3
         ctx.aa += 1
         assert ctx.aa == 4
@@ -165,3 +163,75 @@ def test_context_isolates_async_loop(CtxLocalCls):
 
     asyncio.run(entry())
     assert ctx.aa == 1
+
+
+
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_works_with_async_generator_send(ContextClass):
+    ctx = ContextClass()
+
+    sentinel = object()
+
+    @ctx
+    async def gen():
+        ctx.value = 2
+        value = yield
+        assert value is not None
+        assert ctx.value == 2
+        ctx.value = 3
+        yield value
+        assert ctx.value == 3
+
+    async def controler():
+        ctx.value = 1
+        g = gen()
+        assert ctx.value == 1
+        await anext(g)
+        assert ctx.value == 1
+        value = await g.asend(sentinel)
+        assert value is sentinel
+        try:
+            await anext(g)
+        except StopAsyncIteration as stop:
+            # assert stop.value is sentinel
+            pass
+        else:
+            assert False, "StopAsyncIteration not raised"
+        assert ctx.value == 1
+
+    asyncio.run(controler())
+
+
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_works_with_async_generator_throw(ContextClass):
+    ctx = ContextClass()
+
+
+    @ctx
+    async def gen():
+        ctx.value = 2
+        with pytest.raises(RuntimeError):
+            value = yield
+        assert ctx.value == 2
+
+    async def controler():
+        ctx.value = 1
+        g = gen()
+        assert ctx.value == 1
+        await anext(g)
+        assert ctx.value == 1
+        try:
+            await g.athrow(RuntimeError)
+        except StopAsyncIteration as stop:
+            pass
+        else:
+            assert False, "StopAsyncIteration not raised"
+        assert ctx.value == 1
+
+    asyncio.run(controler())

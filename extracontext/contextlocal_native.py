@@ -83,6 +83,8 @@ class NativeContextLocal:
         return wrapper
 
     def __enter__(self):
+        # TBD: use ctypes or cython to call this stuff: .. c:function:: int PyContext_Enter(PyObject *ctx)
+
         raise NotImplementedError("Context manager behavior not implemented by native ContextVars implementation")
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -99,7 +101,8 @@ class NativeContextLocal:
         elif inspect.isgenerator(result):
             result = self._generator_wrapper(result, new_context)
         elif inspect.isasyncgen(result):
-            raise NotImplementedError("NativeContextLocal doesn't yet work with async generators")
+            result = self._async_generator_wrapper(result, new_context)
+            #raise NotImplementedError("NativeContextLocal doesn't yet work with async generators")
         return result
 
     @staticmethod
@@ -127,5 +130,26 @@ class NativeContextLocal:
             return asyncio.create_task(coro, context=ctx_copy)
         return await ctx_copy.run(trampoline)
 
+    @classmethod
+    async def _async_generator_wrapper(cls, generator, ctx_copy):
+        value = None
+        while True:
+            try:
+                if value is None:
+                    #breakpoint()
+                    async_res = ctx_copy.run(anext, generator)
+                else:
+                    async_res = ctx_copy.run(generator.asend, value)
+                value = yield await cls._awaitable_wrapper(async_res, ctx_copy)
+            except StopAsyncIteration as stop:
+                break
+            except Exception as exc:
+                # for debugging times: this will be hard without a break here!
+                # print(exc)
+                try:
+                    async_res = ctx_copy.run(generator.athrow, exc)
+                    value = yield await cls._awaitable_wrapper(async_res, ctx_copy)
+                except StopAsyncIteration as stop:
+                    break
     def __dir__(self):
         return list(key for key, value in self._registry.items() if value.get() is not _sentinel)
