@@ -25,9 +25,13 @@ def test_context_local_enter_new_context_in_with_block(ContextClass):
     assert ctx.value == 1
 
 
-def test_context_local_in_with_block_can_see_outside_values():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_in_with_block_can_see_outside_values(ContextClass):
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     ctx.value = 1
 
@@ -39,9 +43,13 @@ def test_context_local_in_with_block_can_see_outside_values():
     assert ctx.value == 1
 
 
-def test_context_local_in_with_block_can_see_outside_values2():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_in_with_block_can_see_outside_values2(ContextClass):
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     ctx.value = 1
     ctx.value2 = 2
@@ -57,9 +65,13 @@ def test_context_local_in_with_block_can_see_outside_values2():
     assert ctx.value == 1
 
 
-def test_context_local_enter_new_context_in_nested_with_blocks():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_enter_new_context_in_nested_with_blocks(ContextClass):
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     ctx.value = 1
 
@@ -76,10 +88,14 @@ def test_context_local_enter_new_context_in_nested_with_blocks():
     assert ctx.value == 1
 
 
-def test_context_local_in_with_block_dont_mixup_with_other_context():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_in_with_block_dont_mixup_with_other_context(ContextClass):
 
-    ctx1 = ContextLocal()
-    ctx2 = ContextLocal()
+    ctx1 = ContextClass()
+    ctx2 = ContextClass()
 
     ctx1.value = 1
     ctx2.value = 2
@@ -105,9 +121,13 @@ def test_context_local_in_with_block_dont_mixup_with_other_context():
     assert ctx2.value == 2
 
 
-def test_context_in_with_block_deleted_var_must_be_undeleted_outside():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_in_with_block_deleted_var_must_be_undeleted_outside(ContextClass):
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     ctx.value = 1
 
@@ -121,9 +141,13 @@ def test_context_in_with_block_deleted_var_must_be_undeleted_outside():
     assert ctx.value == 1
 
 
-def test_context_in_with_block_deleted_var_must_be_undeleted_outside_even_after_set_again():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_in_with_block_deleted_var_must_be_undeleted_outside_even_after_set_again(ContextClass):
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     ctx.value = 1
 

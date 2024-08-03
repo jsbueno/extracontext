@@ -7,7 +7,6 @@ implemented 100% in Python, but backed by PEP 567 stdlib contextvar.ContextVar
 
 """
 import asyncio
-import ctypes
 import inspect
 import uuid
 import sys
@@ -18,10 +17,15 @@ from weakref import WeakKeyDictionary
 from contextvars import ContextVar, Context, copy_context
 import contextvars
 
+try:
+    import ctypes
+except ImportError as error:
+    import warnings
+    warnings.warn(f"Couldn't import ctypes! `with` context blocks for NativeContextLocal won't work:\n {error.msg}")
+    warnings.warn("\n\nIf you need this feature in subinterpreters, please open a project issue")
 
 __author__ = "João S. O. Bueno"
 __license__ = "LGPL v. 3.0+"
-
 
 _sentinel = object()
 
