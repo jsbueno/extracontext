@@ -7,6 +7,7 @@ implemented 100% in Python, but backed by PEP 567 stdlib contextvar.ContextVar
 
 """
 import asyncio
+import ctypes
 import inspect
 import uuid
 import sys
@@ -45,8 +46,12 @@ class NativeContextLocal:
 
     [Work In Progress]
     """
+
+    _ctypes_initialized = False
+
     def __init__(self):
         self._et_registry = {}
+
 
 
     def __getattr__(self, name):
@@ -82,13 +87,37 @@ class NativeContextLocal:
             return self._run(callable_, *args, **kw)
         return wrapper
 
-    def __enter__(self):
-        # TBD: use ctypes or cython to call this stuff: .. c:function:: int PyContext_Enter(PyObject *ctx)
+    def _ensure_api_ready(self):
+        if not self._ctypes_initialized:
+            ctypes.pythonapi.PyContext_Enter.argtypes = [ctypes.py_object]
+            ctypes.pythonapi.PyContext_Exit.argtypes = [ctypes.py_object]
+            ctypes.pythonapi.PyContext_Enter.restype = ctypes.c_int32
+            ctypes.pythonapi.PyContext_Exit.restype = ctypes.c_int32
+            self.__class__._ctypes_initialized = True
 
-        raise NotImplementedError("Context manager behavior not implemented by native ContextVars implementation")
+    def _enter_ctx(self, ctx):
+        self._ensure_api_ready()
+        result = ctypes.pythonapi.PyContext_Enter(ctx)
+        if result != 0:
+            raise RuntimeError(f"Something went wrong entering context {ctx}")
+
+    def _exit_ctx(self, ctx):
+        result = ctypes.pythonapi.PyContext_Exit(ctx)
+        if result != 0:
+            raise RuntimeError(f"Something went wrong exiting context {ctx}")
+
+    def __enter__(self):
+        if not hasattr(self, "_stack"):
+            self._stack = []
+
+        new_context = copy_context()
+        self._stack.append(new_context)
+        self._enter_ctx(new_context)
+        return True
 
     def __exit__(self, exc_type, exc_value, traceback):
-        raise NotImplementedError("Context manager behavior not implemented by native ContextVars implementation")
+        exiting_context = self._stack.pop()
+        self._exit_ctx(exiting_context)
 
     def _run(self, callable_, *args, **kw):
         """Runs callable with an isolated context

@@ -2,15 +2,19 @@ import threading
 import time
 from collections import deque
 
-from extracontext import ContextLocal
+from extracontext import ContextLocal, NativeContextLocal
 
 import pytest
 
 consume = deque(maxlen=0).extend
 
-def test_context_local_enter_new_context_in_with_block():
+@pytest.mark.parametrize(["ContextClass"], [
+    (ContextLocal,),
+    (NativeContextLocal,)
+])
+def test_context_local_enter_new_context_in_with_block(ContextClass):
 
-    ctx = ContextLocal()
+    ctx = ContextClass()
 
     ctx.value = 1
 
