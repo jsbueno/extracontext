@@ -2,14 +2,14 @@ import threading
 import time
 from collections import deque
 
-from extracontext import ContextLocal, NativeContextLocal
+from extracontext import PyContextLocal, NativeContextLocal
 
 import pytest
 
 consume = deque(maxlen=0).extend
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_enter_new_context_in_with_block(ContextClass):
@@ -26,7 +26,7 @@ def test_context_local_enter_new_context_in_with_block(ContextClass):
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_in_with_block_can_see_outside_values(ContextClass):
@@ -44,7 +44,7 @@ def test_context_local_in_with_block_can_see_outside_values(ContextClass):
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_in_with_block_can_see_outside_values2(ContextClass):
@@ -66,7 +66,7 @@ def test_context_local_in_with_block_can_see_outside_values2(ContextClass):
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_enter_new_context_in_nested_with_blocks(ContextClass):
@@ -89,7 +89,7 @@ def test_context_local_enter_new_context_in_nested_with_blocks(ContextClass):
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_in_with_block_dont_mixup_with_other_context(ContextClass):
@@ -122,7 +122,7 @@ def test_context_local_in_with_block_dont_mixup_with_other_context(ContextClass)
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_in_with_block_deleted_var_must_be_undeleted_outside(ContextClass):
@@ -142,7 +142,7 @@ def test_context_in_with_block_deleted_var_must_be_undeleted_outside(ContextClas
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_in_with_block_deleted_var_must_be_undeleted_outside_even_after_set_again(ContextClass):

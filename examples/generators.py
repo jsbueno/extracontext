@@ -17,9 +17,9 @@ https://stackoverflow.com/questions/53611690/how-do-i-write-consistent-stateful-
 from contextlib import contextmanager
 #from contextvars import ContextVar, Context, copy_context
 
-from extracontext import ContextLocal
+from extracontext import PyContextLocal
 
-ctx = ContextLocal()
+ctx = PyContextLocal()
 
 
 @contextmanager

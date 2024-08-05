@@ -1,7 +1,7 @@
 """
 Super context wrapper -
 
-Meant to have the same interface as the easy-to-use ContextLocal,
+Meant to have the same interface as the easy-to-use PyContextLocal,
 implemented 100% in Python, but backed by PEP 567 stdlib contextvar.ContextVar
 
 
@@ -17,6 +17,8 @@ from weakref import WeakKeyDictionary
 from contextvars import ContextVar, Context, copy_context
 import contextvars
 
+from .base import ContextLocal
+
 try:
     import ctypes
 except ImportError as error:
@@ -30,7 +32,7 @@ __license__ = "LGPL v. 3.0+"
 _sentinel = object()
 
 
-class NativeContextLocal:
+class NativeContextLocal(ContextLocal):
     """Uses th native contextvar module in the stdlib (PEP 567)
     to provide a context-local namespace in the way
     threading.local  works for threads.
@@ -51,11 +53,12 @@ class NativeContextLocal:
     [Work In Progress]
     """
 
+    _backend_key = "native"
     _ctypes_initialized = False
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._et_registry = {}
-
 
 
     def __getattr__(self, name):

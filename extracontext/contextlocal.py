@@ -17,8 +17,6 @@ visible inside  the decorated callable.
 
 """
 
-from __future__ import annotations
-
 import uuid
 import sys
 import typing as T
@@ -27,6 +25,7 @@ from functools import wraps
 from types import FrameType
 from weakref import WeakKeyDictionary
 
+from .base import ContextLocal
 
 __author__ = "João S. O. Bueno"
 __license__ = "LGPL v. 3.0+"
@@ -58,7 +57,7 @@ class _WeakableId:
         return f"ID({uuid.UUID(int=self.value)})"
 
 
-class ContextLocal:
+class PyContextLocal(ContextLocal):
     """Creates a namespace object whose attributes can keep individual and distinct values for
     the same key for code running in parallel - either in asyncio tasks, or threads.
 
@@ -80,7 +79,7 @@ class ContextLocal:
     References to the frames containing context data is kept using
     weakreferences, so when a Frame ends up execution, its contents
     are deleted normally, with no risks of frame data
-    hanging around due to ContextLocal data.
+    hanging around due to PyContextLocal data.
 
 
     """
@@ -89,7 +88,10 @@ class ContextLocal:
     # methods between subclasses and the methods here.
     _BASEDIST = 0
 
-    def __init__(self) -> None:
+    _backend_key = "python"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         super().__setattr__("_registry", WeakKeyDictionary())
 
     def _introspect_registry(self, name: T.Optional[str]=None, starting_frame: int=2) -> T.Tuple[dict, T.Tuple[int, int]]:
@@ -219,11 +221,11 @@ class ContextLocal:
             return result
         return wrapper
 
-    def __enter__(self) -> ContextLocal:
+    def __enter__(self):
         self._register_context(sys._getframe(1))
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self, exc_type, exc_value, traceback):
         self._pop_context(sys._getframe(1))
 
     def _run(self, callable_, *args, **kw):

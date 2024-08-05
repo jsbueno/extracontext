@@ -4,13 +4,13 @@ from collections import deque
 
 import pytest
 
-from extracontext import ContextLocal, NativeContextLocal
+from extracontext import PyContextLocal, NativeContextLocal
 
 consume = deque(maxlen=0).extend
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_vars_work_for_threads(ContextClass):

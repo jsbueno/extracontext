@@ -13,11 +13,11 @@ from contextlib import contextmanager
 
 import pytest
 
-from extracontext import ContextLocal, ContextError, NativeContextLocal
+from extracontext import PyContextLocal, ContextError, NativeContextLocal
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_vars_work_as_decorator(ContextClass):
@@ -34,7 +34,7 @@ def test_context_local_vars_work_as_decorator(ContextClass):
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_doesnt_leak_from_generator(ContextClass):
@@ -56,7 +56,7 @@ def test_context_local_doesnt_leak_from_generator(ContextClass):
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_works_with_generator_send(ContextClass):
@@ -89,7 +89,7 @@ def test_context_local_works_with_generator_send(ContextClass):
     assert ctx.value == 1
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_works_with_generator_throw(ContextClass):
@@ -119,7 +119,7 @@ def test_context_local_works_with_generator_throw(ContextClass):
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_vars_work_for_generators(ContextClass):

@@ -1,20 +1,21 @@
 from collections.abc import MutableMapping
 
 
-from .contextlocal import ContextLocal
+from .contextlocal import PyContextLocal
 
 
-class ContextMap(MutableMapping, ContextLocal):#, MutableMapping):
-    """Works the same as ContextLocal,
+class ContextMap(MutableMapping, PyContextLocal):#, MutableMapping):
+    """Works the same as PyContextLocal,
     but uses the mapping interface instead of dealing with instance attributes.
 
     Ideal, as for most map uses, when the keys depend on data rather than
     hardcoded state variables
     """
+    _backend_key = "map"
     _BASEDIST = 1
 
     def __init__(self, **kwargs):
-        #self.ctx = ContextLocal()
+        #self.ctx = PyContextLocal()
         super().__init__()
         for key, value in kwargs.items():
             self[key] = value

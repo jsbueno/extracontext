@@ -1,11 +1,11 @@
 import asyncio
 import threading
 
-from extracontext import ContextLocal, NativeContextLocal
+from extracontext import PyContextLocal, NativeContextLocal
 
 import pytest
 
-@pytest.mark.parametrize("CtxLocalCls", [ContextLocal, NativeContextLocal])
+@pytest.mark.parametrize("CtxLocalCls", [PyContextLocal, NativeContextLocal])
 def test_context_local_vars_work_for_async(CtxLocalCls):
 
     # from types import SimpleNamespace
@@ -67,7 +67,7 @@ def test_threading_local_vars_do_not_work_for_async():
     assert missing_values
 
 
-@pytest.mark.parametrize("CtxLocalCls", [ContextLocal, NativeContextLocal])
+@pytest.mark.parametrize("CtxLocalCls", [PyContextLocal, NativeContextLocal])
 def test_context_local_async_reflect_changes_made_downstream(CtxLocalCls):
     """New tasks, inside "gather" call can't effect ctx as defined in manager.
 
@@ -134,7 +134,7 @@ def test_nativecontext_local_works_with_tasks():
 
 
 @pytest.mark.parametrize("CtxLocalCls", [
-    ContextLocal,
+    PyContextLocal,
     pytest.param(NativeContextLocal) #, marks=pytest.mark.xfail(raises=NotImplementedError))
 ])
 def test_context_isolates_async_loop(CtxLocalCls):
@@ -167,7 +167,7 @@ def test_context_isolates_async_loop(CtxLocalCls):
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_works_with_async_generator_send(ContextClass):
@@ -206,7 +206,7 @@ def test_context_local_works_with_async_generator_send(ContextClass):
 
 
 @pytest.mark.parametrize(["ContextClass"], [
-    (ContextLocal,),
+    (PyContextLocal,),
     (NativeContextLocal,)
 ])
 def test_context_local_works_with_async_generator_throw(ContextClass):
