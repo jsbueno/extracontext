@@ -23,6 +23,13 @@ def test_default_backend_is_native():
     assert isinstance(ctx, NativeContextLocal)
 
 
+
+def test_direct_instantion_of_subclasses_works():
+    # The "route to subclass based on backend" pattern failed at least once during development.
+    assert isinstance(PyContextLocal(), PyContextLocal)
+    assert isinstance(NativeContextLocal(), NativeContextLocal)
+
+
 @pytest.mark.parametrize(["ContextClass"], [
     (PyContextLocal,),
     (NativeContextLocal,)
@@ -239,13 +246,13 @@ def test_each_call_creates_unique_context_and_clean_up():
 
     @ctx
     def testcall():
-        context_keys.update(ctx._registry.keys())
+        context_keys.update(ctx._et_registry.keys())
 
     for i in range(10):
         testcall()
 
     assert len(context_keys) == 10
-    assert len(list(ctx._registry.keys())) == 0
+    assert len(list(ctx._et_registry.keys())) == 0
 
 
 def test_unique_context_for_generators_is_cleaned_up():
@@ -255,7 +262,7 @@ def test_unique_context_for_generators_is_cleaned_up():
 
     @ctx
     def testcall():
-        context_keys.update(k.value for k in ctx._registry.keys())
+        context_keys.update(k.value for k in ctx._et_registry.keys())
         yield None
 
     for i in range(100):
@@ -265,7 +272,7 @@ def test_unique_context_for_generators_is_cleaned_up():
 
 
     assert len(context_keys) == 100
-    assert len(list(ctx._registry.keys())) == 0
+    assert len(list(ctx._et_registry.keys())) == 0
 
 
 def recursive_size(obj):

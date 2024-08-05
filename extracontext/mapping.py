@@ -1,21 +1,20 @@
 from collections.abc import MutableMapping
 
-
+from .base import ContextLocal
 from .contextlocal import PyContextLocal
+from .contextlocal_native import NativeContextLocal
 
 
-class ContextMap(MutableMapping, PyContextLocal):#, MutableMapping):
+class ContextMap(MutableMapping, ContextLocal):
     """Works the same as PyContextLocal,
     but uses the mapping interface instead of dealing with instance attributes.
 
     Ideal, as for most map uses, when the keys depend on data rather than
     hardcoded state variables
     """
-    _backend_key = "map"
-    _BASEDIST = 1
+    _backend_registry = {}
 
-    def __init__(self, **kwargs):
-        #self.ctx = PyContextLocal()
+    def __init__(self, *, backend=None, **kwargs):
         super().__init__()
         for key, value in kwargs.items():
             self[key] = value
@@ -35,6 +34,7 @@ class ContextMap(MutableMapping, PyContextLocal):#, MutableMapping):
         except AttributeError:
             raise KeyError(name)
 
+
     def __iter__(self):
         return iter(dir(self))
 
@@ -42,4 +42,10 @@ class ContextMap(MutableMapping, PyContextLocal):#, MutableMapping):
         return len(dir(self))
 
 
+class PyContextMap(PyContextLocal, ContextMap):
+    _backend_key = "python"
+    _BASEDIST = 1
+
+class NativeContextMap(NativeContextLocal, ContextMap):
+    _backend_key = "native"
 

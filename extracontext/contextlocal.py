@@ -92,7 +92,7 @@ class PyContextLocal(ContextLocal):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        super().__setattr__("_registry", WeakKeyDictionary())
+        super().__setattr__("_et_registry", WeakKeyDictionary())
 
     def _introspect_registry(self, name: T.Optional[str]=None, starting_frame: int=2) -> T.Tuple[dict, T.Tuple[int, int]]:
         """
@@ -110,11 +110,11 @@ class PyContextLocal(ContextLocal):
         first_ns = None
         while f:
             hf = self._frameid(f)
-            if hf in self._registry:
+            if hf in self._et_registry:
                 if first_ns is None:
                     first_ns = count
                 registered_namespaces = f.f_locals["$contexts"]
-                for namespace_index in reversed(self._registry[hf]):
+                for namespace_index in reversed(self._et_registry[hf]):
                     namespace = registered_namespaces[namespace_index]
                     if name is None or name in namespace:
                         return namespace, (first_ns, count)
@@ -135,11 +135,11 @@ class PyContextLocal(ContextLocal):
         hf = self._frameid(f)
         contexts_list = f.f_locals.setdefault("$contexts", [])
         contexts_list.append({})
-        self._registry.setdefault(hf, []).append(len(contexts_list) - 1)
+        self._et_registry.setdefault(hf, []).append(len(contexts_list) - 1)
 
     def _pop_context(self, f: FrameType) -> None:
         hf = self._frameid(f)
-        context_being_popped = self._registry[hf].pop()
+        context_being_popped = self._et_registry[hf].pop()
         contexts_list = f.f_locals["$contexts"]
         contexts_list[context_being_popped] = None
 
@@ -209,8 +209,8 @@ class PyContextLocal(ContextLocal):
             try:
                 result = callable_(*args, **kw)
             finally:
-                if f_id in self._registry:
-                    del self._registry[f_id]
+                if f_id in self._et_registry:
+                    del self._et_registry[f_id]
                 # Setup context for generator, async generator or coroutine if one was returned:
                 if result is not _sentinel:
                     frame = None
