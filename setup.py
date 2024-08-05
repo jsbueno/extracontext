@@ -7,7 +7,7 @@ setup(
     description="Context Variable namespaces supporting generators, asyncio and multi-threading",
     packages=["extracontext"],
     long_description = open("README.md").read(),
-    version="0.2beta2",
+    version="0.3beta2",
     install_requires=[],
     extras_require={
         "dev": ["pytest", "ipython", "black", "pyflakes", "mypy", "pytest-coverage"]

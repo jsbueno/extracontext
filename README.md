@@ -1,14 +1,39 @@
 Context Local Variables
 ==========================
 
+Implements a Pythonic way to work with PEP 567
+contextvars (https://peps.python.org/pep-0567/ )
 
-Context Local Variables meant to enable
-separate variable values for code running either
-in asyncio, using generators, or multiple-threads.
+Introduced in Python 3.7, a design decision by the
+authors of the feature decided to opt-out of
+the simple namespace used by Python's own `threading.local`
+implementation, and requires an explicit top level
+declaration of each context-local variable, and
+the (rather "unpythonic") usage of an explicit
+call to `get` and `set` methods to manipulate
+those.
 
+This package does away with that, and brings simplicity
+back - simply instantiate a `ContextLocal` namespace,
+and any attributes set in that namespace will be unique
+per thread and per asynchronous call chain (i.e.
+unique for each independent task).
 
-These are meant to be simpler to use and work in more scenarios than
-Python's contextvars.(PEP 567)
+In a sense, these are a drop-in replacement for
+`threading.local`, which will also work for
+asynchronous programming without any change in code.
+
+One should just avoid creating the "ContextLocal" instance itself
+in a non-setup function or method - as the implementation
+uses Python contextvars in by default, those are not
+cleaned-up along with the local scope where they are
+created - check the docs on the contextvar module for more
+details.
+
+However, creating the actual variables to use inside this namespace
+can be made local to functions or methods: the same inner
+ContextVar instance will be re-used when re-entering the function
+
 
 Usage:
 
@@ -21,8 +46,33 @@ and non-local until entering another callable decorated
 with the instance itself - that will create a new, separated scope
 visible inside  the decorated callable.
 
+```python
 
-Example:
+from extracontext import ContextLocal
+
+# global namespace, available in any thread or async task:
+ctx = ContextLocal()
+
+def myworker():
+    # value set only visible in the current thread or asyncio task:
+    ctx.value = "test"
+
+
+```
+
+More Features:
+
+Unlike `threading.local` namespaces, one can explicitly isolate a contextlocal namespace
+when calling a function even on the same thread or same async call chain (task). And unlike
+`contextvars.ContextVar`, there is no need to have an explicit context copy
+and often an intermediate function call to switch context: `extracontext.ContextLocal`
+can isolate the context using either a `with` block or as a decorator
+(when entering the decorated function, all variables in the namespace are automatically
+protected against any changes that would be visible when that call returns,
+the previous values being restored).
+
+
+Example showing context separation for concurrent generators:
 
 
 
@@ -126,27 +176,55 @@ def isolated_function()
     assert ctx.value == 23
 
 ```
-In (advanced) Progress:
+
+Map namespaces
+-----------------
+
+The `ContextMap` class works just the same way, but works
+as a mapping:
+
+
+```python
+
+from extracontext import ContextMap
+
+# global namespace, available in any thread or async task:
+ctx = ContextMap()
+
+def myworker():
+    # value set only visible in the current thread or asyncio task:
+    ctx["value"] = "test"
+
+
+```
+
+
+New for 0.3
 -----------
 
- A "native" stdlib contextvars.ContextVar backed class, and add some
- performance benchmarking. Current implementation is Python code
- all the way and "hides" context values in the frame local variables.
+Switch the backend to use native Python contextvars (exposed in
+the stdlib "contextvars" module by default.
+
+Up to the update in July/Aug 2024 the core package functionality
+was provided by a pure Python implementation which keeps context state
+in a hidden frame-local variables - while that is throughfully tested
+it performs a linear lookup in all the callchain for the context namespace.
+
+ For the 0.3 release, the "native" stdlib contextvars.ContextVar backed class,
+ has reached first class status, and is now the default method used.
 
  The extracontext.NativeContextLocal class builds on Python's contextvars
  instead of reimplementing all the functionality from scratch, and makes
  simple namespaces and decorator-based scope isolation just work, with
  all the safety and performance of the Python native implementation,
  with none of the boilerplate or confuse API.
- (Isolation inside a function in a `with` statement block is not possible, though
-
-  Progress for the native implementation is advanced, and once it is passing the
-  tests, it will probably become the default class for the package. (and at this point
-  we should make a stable release)
 
 
 Next Steps:
 -----------
+(not so sure about these - they are fruit of some 2018 brainstorming for
+features in a project I am not coding for anymore)
+
 
  1. Add a way to chain-contexts, so, for example
 and app can have a root context with default values
