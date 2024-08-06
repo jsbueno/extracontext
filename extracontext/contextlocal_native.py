@@ -164,20 +164,35 @@ class NativeContextLocal(ContextLocal):
                 except StopIteration as stop:
                     return stop.value
 
-    @staticmethod
-    async def _awaitable_wrapper(coro, ctx_copy):
-        def trampoline():
-            if sys.version_info >= (3, 11):
+    if sys.version_info >= (3, 11):
+        async def _awaitable_wrapper(self, coro, ctx_copy):
+            def trampoline():
                 return asyncio.create_task(coro, context=ctx_copy)
+            return await ctx_copy.run(trampoline)
+    else:
+        async def _awaitable_wrapper(self, coro, ctx_copy):
+            from ._future_task import FutureTask
+            loop = asyncio.get_running_loop()
+            def trampoline():
+                return FutureTask(coro, loop=loop, context=ctx_copy)
+            return await ctx_copy.run(trampoline)
+        ## this fails in spetacular and inovative ways!
+        #async def _awaitable_wrapper(self, coro, ctx_copy, force_context=True):
+            #if force_context:
+                #try:
+                    #self._enter_ctx(ctx_copy)
+                    #result = await coro
+                #finally:
+                    #self._exit_ctx(ctx_copy)
+                #return result
+            #else:
+                #return await coro
 
-            # Failing on verions < 3,11: task creation internally makes one extra context copy
-            # which isolates the context across asyncgen iterations:
-            return asyncio.create_task(coro)
 
-        return await ctx_copy.run(trampoline)
+        async def _awaitable_wrapper2(self, coro, ctx_copy):
+            raise NotImplementedError("""This code will only work with Python versions > 3.11. Please use `ContextLocal(backend="python")` for Python version 3.8 - 3.10""")
 
-    @classmethod
-    async def _async_generator_wrapper(cls, generator, ctx_copy):
+    async def _async_generator_wrapper(self, generator, ctx_copy):
         value = None
         while True:
             try:
@@ -185,15 +200,15 @@ class NativeContextLocal(ContextLocal):
                     async_res = ctx_copy.run(anext, generator)
                 else:
                     async_res = ctx_copy.run(generator.asend, value)
-                value = yield await cls._awaitable_wrapper(async_res, ctx_copy)
+                value = yield await self._awaitable_wrapper(async_res, ctx_copy)
             except StopAsyncIteration as stop:
                 break
             except Exception as exc:
                 # for debugging times: this will be hard without a break here!
-                # print(exc)
+                # print("*" * 50 , exc)
                 try:
                     async_res = ctx_copy.run(generator.athrow, exc)
-                    value = yield await cls._awaitable_wrapper(async_res, ctx_copy)
+                    value = yield await self._awaitable_wrapper(async_res, ctx_copy)
                 except StopAsyncIteration as stop:
                     break
     def __dir__(self):

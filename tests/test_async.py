@@ -233,7 +233,7 @@ def test_context_local_works_with_async_generator_throw(ContextClass):
         await anext(g)
         assert ctx.value == 1
         try:
-            await g.athrow(RuntimeError)
+            await g.athrow(RuntimeError("test exception"))
         except StopAsyncIteration as stop:
             pass
         else:
