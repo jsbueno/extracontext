@@ -10,6 +10,7 @@ import asyncio
 import inspect
 import uuid
 import sys
+import threading
 import typing as T
 
 from functools import wraps
@@ -19,12 +20,18 @@ import contextvars
 
 from .base import ContextLocal
 
-try:
-    import ctypes
-except ImportError as error:
-    import warnings
-    warnings.warn(f"Couldn't import ctypes! `with` context blocks for NativeContextLocal won't work:\n {error.msg}")
-    warnings.warn("\n\nIf you need this feature in subinterpreters, please open a project issue")
+if sys.implementation.name == "pypy":
+    pypy = True
+    from __pypy__ import get_contextvar_context as _get_contextvar_context, set_contextvar_context as _set_contextvar_context
+
+else:
+    pypy = False
+    try:
+        import ctypes
+    except ImportError as error:
+        import warnings
+        warnings.warn(f"Couldn't import ctypes! `with` context blocks for NativeContextLocal won't work:\n {error.msg}")
+        warnings.warn("\n\nIf you need this feature in subinterpreters, please open a project issue")
 
 if sys.version_info < (3, 10):
     from types import AsyncGeneratorType
@@ -63,6 +70,8 @@ class NativeContextLocal(ContextLocal):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._et_registry = {}
+        self._et_stack = {}
+        self._et_lock = threading.Lock()
 
 
     def __getattr__(self, name):
@@ -106,29 +115,48 @@ class NativeContextLocal(ContextLocal):
             ctypes.pythonapi.PyContext_Exit.restype = ctypes.c_int32
             self.__class__._ctypes_initialized = True
 
-    def _enter_ctx(self, ctx):
+    def _get_ctx_key(self):
+        key_thread = threading.current_thread()
+        try:
+            key_task = asyncio.current_task()
+        except RuntimeError:
+            key_task = None
+        return (key_thread, key_task)
+
+
+    def _enter_ctx(self, new_ctx):
+        if pypy:
+            prev_ctx = _get_contextvar_context()
+            _set_contextvar_context(new_ctx)
+            return prev_ctx
         self._ensure_api_ready()
-        result = ctypes.pythonapi.PyContext_Enter(ctx)
+        result = ctypes.pythonapi.PyContext_Enter(new_ctx)
         if result != 0:
             raise RuntimeError(f"Something went wrong entering context {ctx}")
+        return None
 
-    def _exit_ctx(self, ctx):
-        result = ctypes.pythonapi.PyContext_Exit(ctx)
+    def _exit_ctx(self, current_ctx, prev_ctx):
+        if pypy:
+            _set_contextvar_context(prev_ctx)
+            return
+        result = ctypes.pythonapi.PyContext_Exit(current_ctx)
         if result != 0:
             raise RuntimeError(f"Something went wrong exiting context {ctx}")
 
     def __enter__(self):
-        if not hasattr(self, "_stack"):
-            self._stack = []
-
-        new_context = copy_context()
-        self._stack.append(new_context)
-        self._enter_ctx(new_context)
-        return True
+        new_ctx = copy_context()
+        prev_ctx = self._enter_ctx(new_ctx)
+        with self._et_lock:
+            self._et_stack.setdefault(self._get_ctx_key(), []).append((new_ctx, prev_ctx))
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        exiting_context = self._stack.pop()
-        self._exit_ctx(exiting_context)
+        key = self._get_ctx_key()
+        with self._et_lock:
+            current_ctx, prev_ctx = self._et_stack[key].pop()
+            if not self._et_stack[key]:
+                self._et_stack.pop(key)
+        self._exit_ctx(current_ctx, prev_ctx)
 
     def _run(self, callable_, *args, **kw):
         """Runs callable with an isolated context
