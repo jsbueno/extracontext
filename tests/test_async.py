@@ -1,9 +1,15 @@
 import asyncio
+import sys
 import threading
 
 from extracontext import PyContextLocal, NativeContextLocal
 
 import pytest
+
+
+if sys.version_info < (3, 10):
+    from types import AsyncGeneratorType
+    anext = AsyncGeneratorType.__anext__
 
 @pytest.mark.parametrize("CtxLocalCls", [PyContextLocal, NativeContextLocal])
 def test_context_local_vars_work_for_async(CtxLocalCls):

@@ -26,6 +26,10 @@ except ImportError as error:
     warnings.warn(f"Couldn't import ctypes! `with` context blocks for NativeContextLocal won't work:\n {error.msg}")
     warnings.warn("\n\nIf you need this feature in subinterpreters, please open a project issue")
 
+if sys.version_info < (3, 10):
+    from types import AsyncGeneratorType
+    anext = AsyncGeneratorType.__anext__
+
 __author__ = "João S. O. Bueno"
 __license__ = "LGPL v. 3.0+"
 
@@ -163,7 +167,13 @@ class NativeContextLocal(ContextLocal):
     @staticmethod
     async def _awaitable_wrapper(coro, ctx_copy):
         def trampoline():
-            return asyncio.create_task(coro, context=ctx_copy)
+            if sys.version_info >= (3, 11):
+                return asyncio.create_task(coro, context=ctx_copy)
+
+            # Failing on verions < 3,11: task creation internally makes one extra context copy
+            # which isolates the context across asyncgen iterations:
+            return asyncio.create_task(coro)
+
         return await ctx_copy.run(trampoline)
 
     @classmethod
@@ -172,7 +182,6 @@ class NativeContextLocal(ContextLocal):
         while True:
             try:
                 if value is None:
-                    #breakpoint()
                     async_res = ctx_copy.run(anext, generator)
                 else:
                     async_res = ctx_copy.run(generator.asend, value)
