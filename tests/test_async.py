@@ -9,7 +9,9 @@ import pytest
 
 if sys.version_info < (3, 10):
     from types import AsyncGeneratorType
+
     anext = AsyncGeneratorType.__anext__
+
 
 @pytest.mark.parametrize("CtxLocalCls", [PyContextLocal, NativeContextLocal])
 def test_context_local_vars_work_for_async(CtxLocalCls):
@@ -20,14 +22,14 @@ def test_context_local_vars_work_for_async(CtxLocalCls):
 
     results = set()
 
-    #@ctx
+    # @ctx
     async def worker(value):
         ctx.value = value
         await asyncio.sleep((10 - value) * 0.01)
         assert value == ctx.value
         results.add(ctx.value)
 
-    #@ctx
+    # @ctx
     async def manager():
         ctx.value = -1
         tasks = asyncio.gather(*(worker(i) for i in range(10)))
@@ -81,7 +83,6 @@ def test_context_local_async_reflect_changes_made_downstream(CtxLocalCls):
     decorated with @ctx, it would not change the value visible in the calling "worker" co-routine.
     """
 
-
     ctx = CtxLocalCls()
 
     results = set()
@@ -123,6 +124,7 @@ def test_nativecontext_local_works_with_tasks():
     ctx = NativeContextLocal()
 
     ctx.value = 5
+
     @ctx
     async def stage1():
         ctx.value = 23
@@ -139,10 +141,15 @@ def test_nativecontext_local_works_with_tasks():
     assert ctx.value == 5
 
 
-@pytest.mark.parametrize("CtxLocalCls", [
-    PyContextLocal,
-    pytest.param(NativeContextLocal) #, marks=pytest.mark.xfail(raises=NotImplementedError))
-])
+@pytest.mark.parametrize(
+    "CtxLocalCls",
+    [
+        PyContextLocal,
+        pytest.param(
+            NativeContextLocal
+        ),  # , marks=pytest.mark.xfail(raises=NotImplementedError))
+    ],
+)
 def test_context_isolates_async_loop(CtxLocalCls):
 
     ctx = CtxLocalCls()
@@ -171,11 +178,7 @@ def test_context_isolates_async_loop(CtxLocalCls):
     assert ctx.aa == 1
 
 
-
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_local_works_with_async_generator_send(ContextClass):
     ctx = ContextClass()
 
@@ -211,13 +214,9 @@ def test_context_local_works_with_async_generator_send(ContextClass):
     asyncio.run(controler())
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_local_works_with_async_generator_throw(ContextClass):
     ctx = ContextClass()
-
 
     @ctx
     async def gen():

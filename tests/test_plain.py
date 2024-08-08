@@ -7,12 +7,10 @@ import pytest
 from extracontext import ContextLocal, PyContextLocal, ContextError, NativeContextLocal
 
 
-
-
-@pytest.mark.parametrize(["ContextClass", "backend"], [
-    (PyContextLocal, "python"),
-    (NativeContextLocal, "native")
-])
+@pytest.mark.parametrize(
+    ["ContextClass", "backend"],
+    [(PyContextLocal, "python"), (NativeContextLocal, "native")],
+)
 def test_backend_can_be_picked_by_keyword(ContextClass, backend):
     ctx = ContextLocal(backend=backend)
     assert isinstance(ctx, ContextClass)
@@ -23,17 +21,13 @@ def test_default_backend_is_native():
     assert isinstance(ctx, NativeContextLocal)
 
 
-
 def test_direct_instantion_of_subclasses_works():
     # The "route to subclass based on backend" pattern failed at least once during development.
     assert isinstance(PyContextLocal(), PyContextLocal)
     assert isinstance(NativeContextLocal(), NativeContextLocal)
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_local_vars_work_as_namespace(ContextClass):
     ctx = ContextClass()
     ctx.value = 1
@@ -43,16 +37,12 @@ def test_context_local_vars_work_as_namespace(ContextClass):
         assert ctx.value == 1
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_function_holds_unique_value_for_attribute(ContextClass):
     context_keys = set()
 
     ctx = ContextClass()
     called = False
-
 
     @ctx
     def testcall():
@@ -70,16 +60,14 @@ def test_context_function_holds_unique_value_for_attribute(ContextClass):
     assert ctx.var1 == 1
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
-def test_context_once_value_in_function_is_erased_outer_value_doesnot_gets_visible_back(ContextClass):
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
+def test_context_once_value_in_function_is_erased_outer_value_doesnot_gets_visible_back(
+    ContextClass,
+):
     context_keys = set()
 
     ctx = ContextClass()
     called = False
-
 
     @ctx
     def testcall():
@@ -99,10 +87,7 @@ def test_context_once_value_in_function_is_erased_outer_value_doesnot_gets_visib
     assert ctx.var1 == 1
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_inner_function_cant_erase_outter_value(ContextClass):
 
     ctx = ContextClass()
@@ -122,15 +107,15 @@ def test_context_inner_function_cant_erase_outter_value(ContextClass):
     assert ctx.var1 == 1
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
-def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_attribute_back(ContextClass):
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
+def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_attribute_back(
+    ContextClass,
+):
 
     ctx = ContextClass()
 
     called = False
+
     @ctx
     def testcall():
         nonlocal called
@@ -154,10 +139,7 @@ def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_at
     assert ctx.var1 == 1
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_inner_function_deleting_attribute_can_reassign_it(ContextClass):
     context_keys = set()
 
@@ -179,11 +161,10 @@ def test_context_inner_function_deleting_attribute_can_reassign_it(ContextClass)
     assert ctx.var1 == 1
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
-def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassignemnt_should_not_see_outer_value(ContextClass):
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
+def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassignemnt_should_not_see_outer_value(
+    ContextClass,
+):
     context_keys = set()
 
     ctx = ContextClass()
@@ -208,10 +189,8 @@ def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassig
     # Value deleted in inner context must be available here
     assert ctx.var1 == 1
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_granddaugher_works_nice_with_daughter_deleting_attribute(ContextClass):
     context_keys = set()
 
@@ -223,7 +202,6 @@ def test_context_granddaugher_works_nice_with_daughter_deleting_attribute(Contex
             ctx.var1
         ctx.var1 = 2
         assert ctx.var1 == 2
-
 
     @ctx
     def daughter():
@@ -270,7 +248,6 @@ def test_unique_context_for_generators_is_cleaned_up():
             pass
     gc.collect()
 
-
     assert len(context_keys) == 100
     assert len(list(ctx._et_registry.keys())) == 0
 
@@ -291,11 +268,12 @@ def recursive_size(obj):
     return size
 
 
-#def test_abusive_memory_leak():
-    #ctx = PyContextLocal()
+# def test_abusive_memory_leak():
+# ctx = PyContextLocal()
 
-    #@ctx
-    #def func(n):
+# @ctx
+# def func(n):
+
 
 def test_contexts_keep_separate_variables():
     c1 = PyContextLocal()
@@ -336,23 +314,23 @@ def test_context_dir():
     assert "var2" not in dir(ctx)
 
 
-
-
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_dir_context_should_not_show_deleted_attributes(ContextClass):
     ctx = ContextClass()
 
     called = False
+
     @ctx
     def testcall():
         nonlocal called
         called = True
-        assert set(dir(ctx)) == {"var1",}
+        assert set(dir(ctx)) == {
+            "var1",
+        }
         ctx.var1 = 2
-        assert set(dir(ctx)) == {"var1",}
+        assert set(dir(ctx)) == {
+            "var1",
+        }
         # removes newly assigned value
         del ctx.var1
         assert dir(ctx) == []
@@ -361,25 +339,27 @@ def test_dir_context_should_not_show_deleted_attributes(ContextClass):
     testcall()
     assert called
     # Value deleted in inner context must be available here
-    assert set(dir(ctx)) == {"var1",}
+    assert set(dir(ctx)) == {
+        "var1",
+    }
     assert ctx.var1 == 1
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_dir_context_should_work_with_intermediate_deleted_attribute(ContextClass):
     ctx = ContextClass()
 
     called = False
+
     @ctx
     def testcall_level2():
         nonlocal called
         called = True
         assert dir(ctx) == []
         ctx.var1 = 2
-        assert set(dir(ctx)) == {"var1",}
+        assert set(dir(ctx)) == {
+            "var1",
+        }
 
     @ctx
     def testcall():
@@ -393,9 +373,9 @@ def test_dir_context_should_work_with_intermediate_deleted_attribute(ContextClas
     assert called
     # Value deleted in inner context must be available here
     assert ctx.var1 == 1
-    assert set(dir(ctx)) == {"var1",}
-
-
+    assert set(dir(ctx)) == {
+        "var1",
+    }
 
 
 def test_context_run_method_isolates_context():
@@ -408,7 +388,6 @@ def test_context_run_method_isolates_context():
         ctx.var1 = 2
         assert ctx.var1 == 2
         del ctx.var1
-
 
     ctx.var1 = 1
     assert ctx.var1 == 1

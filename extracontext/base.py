@@ -1,5 +1,6 @@
 class ContextLocal:
     _backend_registry = {}
+
     def __new__(cls, *args, backend=None, **kwargs):
         if backend is None:
             backend = getattr(cls, "_backend_key", "native")

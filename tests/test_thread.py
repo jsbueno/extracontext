@@ -9,10 +9,7 @@ from extracontext import PyContextLocal, NativeContextLocal
 consume = deque(maxlen=0).extend
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_local_vars_work_for_threads(ContextClass):
 
     ctx = ContextClass()
@@ -37,10 +34,8 @@ def test_context_local_vars_work_for_threads(ContextClass):
 
     manager()
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_root_value_do_not_exists_on_new_thread(ContextClass):
     # Variable unset in the namespace in a new thread is the
     # behavior for threading.local and contextvar.ContextVar:
@@ -63,6 +58,7 @@ def test_root_value_do_not_exists_on_new_thread(ContextClass):
     t1.start()
     t1.join()
     assert not in_thread_exception
+
 
 def test_native_context_local_interleaved_threads_context_manager():
 
@@ -96,6 +92,3 @@ def test_native_context_local_interleaved_threads_context_manager():
     t2.join()
     assert ctx.value == 1
     assert not in_thread_exception
-
-
-

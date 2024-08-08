@@ -30,6 +30,7 @@ from .base import ContextLocal
 __author__ = "João S. O. Bueno"
 __license__ = "LGPL v. 3.0+"
 
+
 class ContextError(AttributeError):
     pass
 
@@ -38,10 +39,10 @@ _sentinel = object()
 
 
 class _WeakableId:
-    """Used internally to identify Frames with context data attached using weakrefs
-    """
+    """Used internally to identify Frames with context data attached using weakrefs"""
 
     __slots__ = ["__weakref__", "value"]
+
     def __init__(self, v=0):
         if not v:
             v = int(uuid.uuid4())
@@ -94,15 +95,17 @@ class PyContextLocal(ContextLocal):
         super().__init__(**kwargs)
         super().__setattr__("_et_registry", WeakKeyDictionary())
 
-    def _introspect_registry(self, name: T.Optional[str]=None, starting_frame: int=2) -> T.Tuple[dict, T.Tuple[int, int]]:
+    def _introspect_registry(
+        self, name: T.Optional[str] = None, starting_frame: int = 2
+    ) -> T.Tuple[dict, T.Tuple[int, int]]:
         """
-            returns the first namespace found for this context, if name is None
-            else, the first namespace where the name exists. The second return
-            value is a tuple inticatind the frame distance to the topmost namespace
-            and the frame distance to the returned namespace.
-            This way callers can tell if the searched name is on the topmost
-            namespace and act accordingly. ("del" needs this information,
-            as it can't remove information on an outter namespace)
+        returns the first namespace found for this context, if name is None
+        else, the first namespace where the name exists. The second return
+        value is a tuple inticatind the frame distance to the topmost namespace
+        and the frame distance to the returned namespace.
+        This way callers can tell if the searched name is on the topmost
+        namespace and act accordingly. ("del" needs this information,
+        as it can't remove information on an outter namespace)
         """
         starting_frame += self._BASEDIST
         f: T.Optional[FrameType] = sys._getframe(starting_frame)
@@ -130,7 +133,6 @@ class PyContextLocal(ContextLocal):
             frame.f_locals["$contexts_salt"] = _WeakableId()
         return frame.f_locals["$contexts_salt"]
 
-
     def _register_context(self, f: FrameType) -> None:
         hf = self._frameid(f)
         contexts_list = f.f_locals.setdefault("$contexts", [])
@@ -143,7 +145,6 @@ class PyContextLocal(ContextLocal):
         contexts_list = f.f_locals["$contexts"]
         contexts_list[context_being_popped] = None
 
-
     def __getattr__(self, name: str) -> T.Any:
         try:
             namespace, _ = self._introspect_registry(name)
@@ -153,7 +154,6 @@ class PyContextLocal(ContextLocal):
             return result
         except (ContextError, KeyError):
             raise AttributeError(f"Attribute not set: {name}")
-
 
     def __setattr__(self, name: str, value: T.Any) -> None:
         try:
@@ -165,7 +165,6 @@ class PyContextLocal(ContextLocal):
             namespace, _ = self._introspect_registry()
 
         namespace[name] = value
-
 
     def __delattr__(self, name: str) -> None:
         try:
@@ -219,6 +218,7 @@ class PyContextLocal(ContextLocal):
                         if frame:
                             self._register_context(frame)
             return result
+
         return wrapper
 
     def __enter__(self):
@@ -235,7 +235,6 @@ class PyContextLocal(ContextLocal):
         with self:
             return callable_(*args, **kw)
 
-
     def __dir__(self) -> T.List[str]:
         frame_count = 2
         all_attrs = set()
@@ -243,7 +242,10 @@ class PyContextLocal(ContextLocal):
         while True:
             try:
                 namespace, _ = self._introspect_registry(starting_frame=frame_count)
-            except (ValueError, ContextError):  # ValueError can be raised sys._getframe inside _introspect_registry
+            except (
+                ValueError,
+                ContextError,
+            ):  # ValueError can be raised sys._getframe inside _introspect_registry
                 break
             frame_count += 1
             if id(namespace) in seen_namespaces:
@@ -253,5 +255,9 @@ class PyContextLocal(ContextLocal):
                     all_attrs.add(key)
 
             seen_namespaces.add(id(namespace))
-        all_attrs = (attr for attr in all_attrs if getattr(self, attr, _sentinel) is not _sentinel)
+        all_attrs = (
+            attr
+            for attr in all_attrs
+            if getattr(self, attr, _sentinel) is not _sentinel
+        )
         return sorted(all_attrs)

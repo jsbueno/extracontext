@@ -6,10 +6,10 @@ from extracontext import ContextMap
 from extracontext.mapping import PyContextMap, NativeContextMap
 
 
-@pytest.mark.parametrize(["ContextMapClass", "backend"], [
-    (PyContextMap, "python"),
-    (NativeContextMap, "native")
-])
+@pytest.mark.parametrize(
+    ["ContextMapClass", "backend"],
+    [(PyContextMap, "python"), (NativeContextMap, "native")],
+)
 def test_backend_can_be_picked_by_keyword(ContextMapClass, backend):
     ctx = ContextMap(backend=backend)
     assert isinstance(ctx, ContextMapClass)
@@ -26,11 +26,7 @@ def test_direct_instantion_of_map_subclasses_works():
     assert isinstance(NativeContextMap(), NativeContextMap)
 
 
-
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
 def test_context_local_vars_work_as_mapping(ContextMapClass):
     ctx = ContextMapClass()
     ctx["value"] = 1
@@ -40,12 +36,7 @@ def test_context_local_vars_work_as_mapping(ContextMapClass):
         assert ctx["value"] == 1
 
 
-
-
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
 def test_contextmap_function_holds_unique_value_for_attribute(ContextMapClass):
 
     ctx = ContextMapClass()
@@ -63,10 +54,7 @@ def test_contextmap_function_holds_unique_value_for_attribute(ContextMapClass):
     assert ctx["var1"] == 1
 
 
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
 def test_context_inner_function_cant_erase_outter_value(ContextMapClass):
 
     ctx = ContextMapClass()
@@ -82,11 +70,10 @@ def test_context_inner_function_cant_erase_outter_value(ContextMapClass):
     assert ctx["var1"] == 1
 
 
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
-def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_attribute_back(ContextMapClass):
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
+def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_attribute_back(
+    ContextMapClass,
+):
 
     ctx = ContextMapClass()
 
@@ -111,10 +98,7 @@ def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_at
     assert ctx["var1"] == 1
 
 
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
 def test_contextmap_inner_function_deleting_attribute_can_reassign_it(ContextMapClass):
 
     ctx = ContextMapClass()
@@ -135,11 +119,10 @@ def test_contextmap_inner_function_deleting_attribute_can_reassign_it(ContextMap
     assert ctx["var1"] == 1
 
 
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
-def test_contextmap_inner_function_reassigning_deleted_value_on_deletion_of_reassignemnt_should_not_see_outer_value(ContextMapClass):
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
+def test_contextmap_inner_function_reassigning_deleted_value_on_deletion_of_reassignemnt_should_not_see_outer_value(
+    ContextMapClass,
+):
 
     # NB: this sort of test is only relevant for the Python backend anyway -
     # but it is nice to keep sure native contextvars are behaving the same
@@ -165,11 +148,10 @@ def test_contextmap_inner_function_reassigning_deleted_value_on_deletion_of_reas
     assert ctx["var1"] == 1
 
 
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
-def test_contextmap_granddaugher_works_nice_with_daughter_deleting_attribute(ContextMapClass):
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
+def test_contextmap_granddaugher_works_nice_with_daughter_deleting_attribute(
+    ContextMapClass,
+):
 
     ctx = ContextMapClass()
 
@@ -232,10 +214,7 @@ def test_contextmap_unique_context_for_generators_is_cleaned_up():
     assert len(list(ctx._et_registry.keys())) == 0
 
 
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
 def test_contextmaps_keep_separate_variables(ContextMapClass):
     c1 = ContextMapClass()
     c2 = ContextMapClass()
@@ -255,10 +234,7 @@ def test_contextmaps_keep_separate_variables(ContextMapClass):
     inner()
 
 
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
 def test_contextmap_keys(ContextMapClass):
 
     ctx = ContextMapClass()
@@ -281,10 +257,7 @@ def test_contextmap_keys(ContextMapClass):
     assert "var2" not in ctx.keys()
 
 
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
 def test_contextmap_run_method_isolates_context(ContextMapClass):
     ctx = ContextMapClass()
 
@@ -299,10 +272,7 @@ def test_contextmap_run_method_isolates_context(ContextMapClass):
     assert ctx["var1"] == 1
 
 
-@pytest.mark.parametrize(["ContextMapClass"], [
-    (PyContextMap,),
-    (NativeContextMap,)
-])
+@pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
 def test_contextmap_mapping_enter_new_context_in_with_block(ContextMapClass):
 
     ctx = ContextMapClass()

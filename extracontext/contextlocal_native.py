@@ -6,6 +6,7 @@ implemented 100% in Python, but backed by PEP 567 stdlib contextvar.ContextVar
 
 
 """
+
 import asyncio
 import inspect
 import uuid
@@ -22,7 +23,10 @@ from .base import ContextLocal
 
 if sys.implementation.name == "pypy":
     pypy = True
-    from __pypy__ import get_contextvar_context as _get_contextvar_context, set_contextvar_context as _set_contextvar_context
+    from __pypy__ import (
+        get_contextvar_context as _get_contextvar_context,
+        set_contextvar_context as _set_contextvar_context,
+    )
 
 else:
     pypy = False
@@ -30,11 +34,17 @@ else:
         import ctypes
     except ImportError as error:
         import warnings
-        warnings.warn(f"Couldn't import ctypes! `with` context blocks for NativeContextLocal won't work:\n {error.msg}")
-        warnings.warn("\n\nIf you need this feature in subinterpreters, please open a project issue")
+
+        warnings.warn(
+            f"Couldn't import ctypes! `with` context blocks for NativeContextLocal won't work:\n {error.msg}"
+        )
+        warnings.warn(
+            "\n\nIf you need this feature in subinterpreters, please open a project issue"
+        )
 
 if sys.version_info < (3, 10):
     from types import AsyncGeneratorType
+
     anext = AsyncGeneratorType.__anext__
 
 __author__ = "João S. O. Bueno"
@@ -73,7 +83,6 @@ class NativeContextLocal(ContextLocal):
         self._et_stack = {}
         self._et_lock = threading.Lock()
 
-
     def __getattr__(self, name):
         var = self._et_registry.get(name, None)
         if var is None:
@@ -86,7 +95,6 @@ class NativeContextLocal(ContextLocal):
             raise AttributeError(f"Attribute not set: {name}")
         return value
 
-
     def __setattr__(self, name, value):
         if name.startswith("_et_"):
             return super().__setattr__(name, value)
@@ -94,7 +102,6 @@ class NativeContextLocal(ContextLocal):
         if var is _sentinel:
             var = self._et_registry[name] = ContextVar(name)
         var.set(value)
-
 
     def __delattr__(self, name):
         if getattr(self, name, _sentinel) is _sentinel:
@@ -105,6 +112,7 @@ class NativeContextLocal(ContextLocal):
         @wraps(callable_)
         def wrapper(*args, **kw):
             return self._run(callable_, *args, **kw)
+
         return wrapper
 
     def _ensure_api_ready(self):
@@ -122,7 +130,6 @@ class NativeContextLocal(ContextLocal):
         except RuntimeError:
             key_task = None
         return (key_thread, key_task)
-
 
     def _enter_ctx(self, new_ctx):
         if pypy:
@@ -147,7 +154,9 @@ class NativeContextLocal(ContextLocal):
         new_ctx = copy_context()
         prev_ctx = self._enter_ctx(new_ctx)
         with self._et_lock:
-            self._et_stack.setdefault(self._get_ctx_key(), []).append((new_ctx, prev_ctx))
+            self._et_stack.setdefault(self._get_ctx_key(), []).append(
+                (new_ctx, prev_ctx)
+            )
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -170,7 +179,7 @@ class NativeContextLocal(ContextLocal):
             result = self._generator_wrapper(result, new_context)
         elif inspect.isasyncgen(result):
             result = self._async_generator_wrapper(result, new_context)
-            #raise NotImplementedError("NativeContextLocal doesn't yet work with async generators")
+            # raise NotImplementedError("NativeContextLocal doesn't yet work with async generators")
         return result
 
     @staticmethod
@@ -193,32 +202,41 @@ class NativeContextLocal(ContextLocal):
                     return stop.value
 
     if sys.version_info >= (3, 11):
+
         async def _awaitable_wrapper(self, coro, ctx_copy):
             def trampoline():
                 return asyncio.create_task(coro, context=ctx_copy)
+
             return await ctx_copy.run(trampoline)
+
     else:
+
         async def _awaitable_wrapper(self, coro, ctx_copy):
             from ._future_task import FutureTask
+
             loop = asyncio.get_running_loop()
+
             def trampoline():
                 return FutureTask(coro, loop=loop, context=ctx_copy)
-            return await ctx_copy.run(trampoline)
-        ## this fails in spetacular and inovative ways!
-        #async def _awaitable_wrapper(self, coro, ctx_copy, force_context=True):
-            #if force_context:
-                #try:
-                    #self._enter_ctx(ctx_copy)
-                    #result = await coro
-                #finally:
-                    #self._exit_ctx(ctx_copy)
-                #return result
-            #else:
-                #return await coro
 
+            return await ctx_copy.run(trampoline)
+
+        ## this fails in spetacular and inovative ways!
+        # async def _awaitable_wrapper(self, coro, ctx_copy, force_context=True):
+        # if force_context:
+        # try:
+        # self._enter_ctx(ctx_copy)
+        # result = await coro
+        # finally:
+        # self._exit_ctx(ctx_copy)
+        # return result
+        # else:
+        # return await coro
 
         async def _awaitable_wrapper2(self, coro, ctx_copy):
-            raise NotImplementedError("""This code will only work with Python versions > 3.11. Please use `ContextLocal(backend="python")` for Python version 3.8 - 3.10""")
+            raise NotImplementedError(
+                """This code will only work with Python versions > 3.11. Please use `ContextLocal(backend="python")` for Python version 3.8 - 3.10"""
+            )
 
     async def _async_generator_wrapper(self, generator, ctx_copy):
         value = None
@@ -239,5 +257,10 @@ class NativeContextLocal(ContextLocal):
                     value = yield await self._awaitable_wrapper(async_res, ctx_copy)
                 except StopAsyncIteration as stop:
                     break
+
     def __dir__(self):
-        return list(key for key, value in self._et_registry.items() if value.get() is not _sentinel)
+        return list(
+            key
+            for key, value in self._et_registry.items()
+            if value.get() is not _sentinel
+        )

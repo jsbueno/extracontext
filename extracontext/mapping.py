@@ -12,6 +12,7 @@ class ContextMap(MutableMapping, ContextLocal):
     Ideal, as for most map uses, when the keys depend on data rather than
     hardcoded state variables
     """
+
     _backend_registry = {}
 
     def __init__(self, *, backend=None, **kwargs):
@@ -34,7 +35,6 @@ class ContextMap(MutableMapping, ContextLocal):
         except AttributeError:
             raise KeyError(name)
 
-
     def __iter__(self):
         return iter(dir(self))
 
@@ -46,6 +46,6 @@ class PyContextMap(PyContextLocal, ContextMap):
     _backend_key = "python"
     _BASEDIST = 1
 
+
 class NativeContextMap(NativeContextLocal, ContextMap):
     _backend_key = "native"
-

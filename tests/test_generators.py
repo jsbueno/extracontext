@@ -16,10 +16,7 @@ import pytest
 from extracontext import PyContextLocal, ContextError, NativeContextLocal
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_local_vars_work_as_decorator(ContextClass):
     ctx = ContextClass()
 
@@ -33,10 +30,7 @@ def test_context_local_vars_work_as_decorator(ContextClass):
         assert ctx.value == 1
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_local_doesnt_leak_from_generator(ContextClass):
     ctx = ContextClass()
 
@@ -55,10 +49,7 @@ def test_context_local_doesnt_leak_from_generator(ContextClass):
     assert ctx.value == 1
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_local_works_with_generator_send(ContextClass):
     ctx = ContextClass()
 
@@ -88,10 +79,8 @@ def test_context_local_works_with_generator_send(ContextClass):
         assert False, "StopIteration not raised"
     assert ctx.value == 1
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_local_works_with_generator_throw(ContextClass):
     ctx = ContextClass()
 
@@ -118,15 +107,12 @@ def test_context_local_works_with_generator_throw(ContextClass):
     assert ctx.value == 1
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_local_vars_work_for_generators(ContextClass):
 
     ctx = ContextClass()
 
-    results  = []
+    results = []
 
     @contextmanager
     def use_mode(mode):
@@ -157,11 +143,15 @@ def test_context_local_vars_work_for_generators(ContextClass):
             yield
             results.append(("back in second", ctx.mode))
         results.append(("exited second context manager", ctx.mode))
+
     first()
-    assert results ==  [
-        ('starting', 0), ('entered first', 1), ('entered second', 2),
-        ('back in first', 1), ('back in second', 2), ('exited second context manager', 1),
-        ('ended second', 1), ('exited first context manager', 0)
+    assert results == [
+        ("starting", 0),
+        ("entered first", 1),
+        ("entered second", 2),
+        ("back in first", 1),
+        ("back in second", 2),
+        ("exited second context manager", 1),
+        ("ended second", 1),
+        ("exited first context manager", 0),
     ]
-
-
