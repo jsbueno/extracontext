@@ -10,6 +10,7 @@ to be needed.
 # **** License for this file: PSF License - ****
 """
 
+import contextvars
 import itertools
 from asyncio.tasks import _PyTask, _register_task
 

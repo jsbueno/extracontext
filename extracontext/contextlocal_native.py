@@ -9,15 +9,11 @@ implemented 100% in Python, but backed by PEP 567 stdlib contextvar.ContextVar
 
 import asyncio
 import inspect
-import uuid
 import sys
 import threading
-import typing as T
 
 from functools import wraps
-from weakref import WeakKeyDictionary
-from contextvars import ContextVar, Context, copy_context
-import contextvars
+from contextvars import ContextVar, copy_context
 
 from .base import ContextLocal
 
@@ -139,7 +135,7 @@ class NativeContextLocal(ContextLocal):
         self._ensure_api_ready()
         result = ctypes.pythonapi.PyContext_Enter(new_ctx)
         if result != 0:
-            raise RuntimeError(f"Something went wrong entering context {ctx}")
+            raise RuntimeError(f"Something went wrong entering context {new_ctx}")
         return None
 
     def _exit_ctx(self, current_ctx, prev_ctx):
@@ -148,7 +144,7 @@ class NativeContextLocal(ContextLocal):
             return
         result = ctypes.pythonapi.PyContext_Exit(current_ctx)
         if result != 0:
-            raise RuntimeError(f"Something went wrong exiting context {ctx}")
+            raise RuntimeError(f"Something went wrong exiting context {current_ctx}")
 
     def __enter__(self):
         new_ctx = copy_context()
@@ -247,7 +243,7 @@ class NativeContextLocal(ContextLocal):
                 else:
                     async_res = ctx_copy.run(generator.asend, value)
                 value = yield await self._awaitable_wrapper(async_res, ctx_copy)
-            except StopAsyncIteration as stop:
+            except StopAsyncIteration:
                 break
             except Exception as exc:
                 # for debugging times: this will be hard without a break here!
@@ -255,7 +251,7 @@ class NativeContextLocal(ContextLocal):
                 try:
                     async_res = ctx_copy.run(generator.athrow, exc)
                     value = yield await self._awaitable_wrapper(async_res, ctx_copy)
-                except StopAsyncIteration as stop:
+                except StopAsyncIteration:
                     break
 
     def __dir__(self):
