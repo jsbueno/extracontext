@@ -198,8 +198,43 @@ def myworker():
 
 ```
 
+Non Leaky Contexts
+-------------------
+Contrary to default contextvars usage, generators
+(and async generators) running in another context do
+take effect inside the generator, and doesn't
+leak back to the calling scope:
 
-New for 0.3
+```
+import extracontext
+ctx = extracontext.ContextLocal()
+@ctx
+def isolatedgen(n):
+    for i in range(n):
+        ctx.myvar = i
+        yield i
+        print (ctx.myvar)
+def test():
+    ctx.myvar = "lambs"
+    for j in isolatedgen(2):
+        print(ctx.myvar)
+        ctx.myvar = "wolves"
+
+In [11]: test()
+lambs
+0
+wolves
+1
+```
+
+By using a stdlib `contextvars.ContextVar` one simply
+can't isolate the body of a generator, save by
+not running a `for` at all, and running all
+iterations manually by calling `ctx_copy.run(next, mygenerator)`
+
+
+
+New for 1.0
 -----------
 
 Switch the backend to use native Python contextvars (exposed in
