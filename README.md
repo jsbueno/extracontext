@@ -205,7 +205,7 @@ Contrary to default contextvars usage, generators
 take effect inside the generator, and doesn't
 leak back to the calling scope:
 
-```
+```python
 import extracontext
 ctx = extracontext.ContextLocal()
 @ctx
