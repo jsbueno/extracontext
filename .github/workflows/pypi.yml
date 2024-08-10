@@ -94,6 +94,7 @@ jobs:
 
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
+    if: ${{ !startsWith(github.ref, 'refs/tags') }}  # when not uploading tags, avoid duplicate version number
     needs:
     - build
     runs-on: ubuntu-latest
