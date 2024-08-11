@@ -3,7 +3,7 @@ from .contextlocal import PyContextLocal, ContextError
 from .mapping import ContextMap
 from .contextlocal_native import NativeContextLocal
 
-__version__ = "1.0.0rc1"
+__version__ = "1.0.0"
 
 __all__ = [
     "ContextLocal",
