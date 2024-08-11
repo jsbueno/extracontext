@@ -330,10 +330,102 @@ modules) is a valid key.
 
 
 ### PyContextLocal
-    ...
+    ContextLocal implementation using pure Python code, and
+reimplementing the functionalities of Contexts and ContextVars
+as implemented by PEP 567 fro scratch.
+
+It works by seeting, in a "hidden" way, values in the caller's
+closure (the `locals()` namespace). Though writting
+to this namespace has traditionally been a "grey area"
+in  Python, the way it makes use of this data is compliant
+with the specs in [PEP-558](https://peps.python.org/pep-0558/)
+which officializes this use for Python 3.13 and beyond
+(and it has always worked since Python 3.0.
+The first implementations of this code where
+tested against Python 3.4 and forward)
+
+It should be kept in place for the time being,
+and could be useful to allow customizations,
+workarounds, or buggy behavior bypassing
+where the native implementation presents
+any short-commings.
+
+It is not an easy to follow code, as in
+one hand there are introspection and meta-programming
+patterns to handle access to the data in a containirized way.
+
+Keep in mind that native contexvars use an
+internal copy-on-write structure in  native code
+which should be much more performant than
+the chain-mapping checks used in this backend.
+
+
+It has been throughfully tested and should be bug free,
+though less performant.
 
 ### NativeContextLocal
-    ...
+
+This leverages on PEP 567 Contexts and ContextVars
+to perform all the isolation and setting mechanics,
+and provides an convenient wrapper layer
+which works as a namespace (and as mapping in NativeContextMap)
+
+It was made the default mechanism due to obvious
+performances and updates taking place in the
+embedded implementation in the language.
+
+The normal ContextVarsAPI exposed to Python
+would not allow for changing context inside the
+same function, requiring a `Context.run` call
+as the only way to switch contexts. Instead of releasing this
+backend without this mechanism, it has been opted
+to call the native cAPI for changing
+context (using `ctypes` in cPython, and the relevant internal
+calls on pypy) so that the feature can work.
+
+When this feature was implemented, `NativeContextLocal`
+instances could then work as a context-manager using
+the `with` statement, and there were no reasons why
+they should not be the default backend. Some
+coding effort were placed in the "Reverse subclass picking"
+mechanism, and it was made te default in a backwards-
+compatible way.
+
+### ContextMap
+
+`ContextMap` is a `ContextLocal` subclass which implements
+[the `MutableMapping` interface](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping).
+It is pretty straightforward in
+that, so that assigments and retrievals using the `ctx["key"]`
+syntax are made available, functionality with the
+`in`, `==`, `!=` operators and the `keys`, `items`, `values`, `get`, `pop`, `popitem`, `clear`, `update`, and `setdefault` methods.
+
+It supports loadding a mapping with the initial context contents, passed as
+the `initial` positional argument - but not keyword-args mapping to initial
+content (as in `dict(a=1)`).
+
+Also, it is a subclass of ContextLocal - so it also allows access to the
+keys with the dotted attribute syntax:
+
+```python
+
+a = extracontext.ContextMap
+
+a["b"] = 1
+
+assert a.b == 1
+
+```
+
+And finally, it uses the same `backend` keyword-arg mechanism to switch between the default
+native-context vars backend and the pure Python backend, which will yield either
+a `PyContextMap` or a `NativeContextMap` instance, accordingly.
+
+### PyContextMap
+`ContextMap` implementation as a subclass of `PyContextLocal`
+
+### NativeContextMap
+`ContextMap` implementation as a subclass of `NativeContextLocal`
 
 
 
