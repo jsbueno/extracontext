@@ -290,6 +290,24 @@ restored to that of the caller, and when it
 re-enters the paused code block, the isolated
 context is restored.
 
+
+```python
+from extracontext import ContextLocal
+
+ctx = ContextLocal()
+
+@ctx
+def isolated_example():
+
+    ctx.value = 2
+    assert ctx.value = 2
+
+ctx.value = 1
+isolated_example()
+assert ctx.value == 1
+
+```
+
 #### Usage as a context manager
 
 A `ContextLocal` instance can simply be used in a
@@ -297,7 +315,7 @@ context manager `with` statement, and any variables
 set or changed within the block will not be
 persisted after the block is over.
 
-```
+```python
 from extracontext import ContextLocal
 
 
@@ -318,8 +336,6 @@ within the block, the context is used again
 as a context manager, it will just work.
 
 
-
-
 #### Semantic difference to contextvars.ContextVar
    Note that a fresh `ContextLocal()` instance will
 be empty, and have access to none of the values _or names_
@@ -330,7 +346,7 @@ modules) is a valid key.
 
 
 ### PyContextLocal
-    ContextLocal implementation using pure Python code, and
+ContextLocal implementation using pure Python code, and
 reimplementing the functionalities of Contexts and ContextVars
 as implemented by PEP 567 fro scratch.
 
@@ -477,16 +493,28 @@ it performs a linear lookup in all the callchain for the context namespace.
 
 ## Next Steps
 
+1. Implementing more of the features possible with the contextvars semantics
+  - `.run` and `.copy` methods
+  - direct access to "`Token`"s as used by contextvars
+  - default value setting for variables
+
+1. A feature allowing other threads to start from a copy of the current context, instead of an empty context. (asyncio independent tasks always see a copy)
+
 1. Bringing in some more typing support
 (not sure what will be possible, but I believe some
 `typing.Protocol` templates at least. On an
 initial search, typing for namespaces is not
 a widelly known feature (if at all)
 
+1. (maybe?) Proper multiprocessing support:
+  - ironing out probable serialization issues,
+  - allowing subprocess workers to start from a copy of the current context.
 
-### Old Next Steps:
+1. (maybe?) support for nested namespaces and maps.
+
+### Old "Next Steps":
 -----------
-(not so sure about these - they are fruit of some 2018 brainstorming for
+(not so sure about these - they are fruit of some 2019 brainstorming for
 features in a project I am not coding for anymore)
 
 
@@ -505,4 +533,4 @@ and app can have a root context with default values
 
  1. Add support for a descriptor-like variable slot - so that values can trigger code when set or retrieved
 
- 1. Shared values and locks: values that are guarranteed to be the same across tasks/threads, and a lock mechanism allowing atomic operations with these values. (extra bonus: try to develop a deadlock-proof lock)
+ 1. Shared values and locks: values that are guarranteed to be the same across tasks/threads, and a lock mechanism allowing atomic operations with these values.
