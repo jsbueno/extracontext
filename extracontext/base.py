@@ -4,7 +4,6 @@ class ContextLocal:
     def __new__(cls, *args, backend=None, **kwargs):
         if backend is None:
             backend = getattr(cls, "_backend_key", "native")
-
         cls = cls._backend_registry[backend]
         ## Do not forward arguments to object.__new__
         if len(__class__.__mro__) == 2:

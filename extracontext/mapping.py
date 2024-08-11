@@ -1,4 +1,4 @@
-from collections.abc import MutableMapping
+from collections.abc import Mapping, MutableMapping
 
 from .base import ContextLocal
 from .contextlocal import PyContextLocal
@@ -15,10 +15,12 @@ class ContextMap(MutableMapping, ContextLocal):
 
     _backend_registry = {}
 
-    def __init__(self, *, backend=None, **kwargs):
-        super().__init__()
-        for key, value in kwargs.items():
-            self[key] = value
+    #def __init__(self, initial: None | Mapping = None, *, backend=None):
+        #super().__init__()
+        #if not initial:
+            #return
+        #for key, value in initial.items():
+            #self[key] = value
 
     def __getitem__(self, name):
         try:
@@ -42,10 +44,29 @@ class ContextMap(MutableMapping, ContextLocal):
         return len(dir(self))
 
 
-class PyContextMap(PyContextLocal, ContextMap):
+class PyContextMap(ContextMap, PyContextLocal):
     _backend_key = "python"
     _BASEDIST = 1
 
 
-class NativeContextMap(NativeContextLocal, ContextMap):
+    def __init__(self, initial: None | Mapping = None, *, backend=None):
+        super().__init__()
+        if not initial:
+            return
+        try:
+            self._BASEDIST = 2
+            for key, value in initial.items():
+                self[key] = value
+        finally:
+            del self._BASEDIST
+
+
+class NativeContextMap(ContextMap, NativeContextLocal):
     _backend_key = "native"
+
+    def __init__(self, initial: None | Mapping = None, *, backend=None):
+        super().__init__()
+        if not initial:
+            return
+        for key, value in initial.items():
+            self[key] = value
