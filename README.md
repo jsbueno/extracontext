@@ -1,20 +1,102 @@
-Context Local Variables
-==========================
+# Extracontext: Context Local Variables for everyone
 
-Implements a Pythonic way to work with PEP 567
-contextvars (https://peps.python.org/pep-0567/ )
+## Description
 
-Introduced in Python 3.7, a design decision by the
-authors of the feature decided to opt-out of
-the simple namespace used by Python's own `threading.local`
-implementation, and requires an explicit top level
+Provides [PEP 567](https://peps.python.org/pep-0567/)
+compliant drop-in replacement for `threading.local`
+namespaces.
+
+The main goal of PEP 567, supersedding [PEP 550](https://peps.python.org/pep-0550/)
+is to create a way to preserve information in
+concurrent running contexts, including multithreading
+and asynchronous (asyncio) tasks, allowing
+each call stack to have its own versions of
+variables containing settings, or request
+parameters.
+
+### Quoting from PEP 567 Rationalle:
+> Thread-local variables are insufficient for asynchronous
+> tasks that execute concurrently in the same OS thread.
+> Any context manager that saves and restores a context
+> value using threading.local() will have its context values
+> bleed to other code unexpectedly when used in async/await code.
+
+## Rationale for "extracontext"
+
+Contextcars, introduced in Python 3.7, were
+implemented following a design decision by the
+which opted-out of the namespace approach
+used by Python's own `threading.local`
+implementation. It then requires an explicit top level
 declaration of each context-local variable, and
 the (rather "unpythonic") usage of an explicit
 call to `get` and `set` methods to manipulate
-those.
+those. Also, the only way to run some code in
+an isolated context copy is to call a function
+indirectly through means of the context object  `.run` method.
+This implies that:
+
+1. Knowing when to run something in a different context is responsability of the caller code
+2. Breaks the easy-to-use, easy-to-read, aesthetics, and overal complicates one of the most fundamental blocks of programming in inperative languages: calling functions.
 
 This package does away with that, and brings simplicity
-back - simply instantiate a `ContextLocal` namespace,
+back, using dotted attributes to a namespace and `=`
+for value assigment:
+
+with stdlib native contexvars:
+
+```python
+import contextvars
+
+# Variable declaration: top level declaration and WET (write everything twice)
+ctx_color = contextvars.ContextVar("ctx_color")
+ctx_font = contextvars.ContextVar("ctx_font")
+
+def blah():
+    ...
+    # use  a set method:
+    ctx_color.set("red")
+    ctx_font.set("arial")
+
+    ...
+    myttext = ...
+    # call a markup render function,
+    # but take care it wont mix our attributes in temporary context changes
+    contextvars.context_copy().run(render_markup, mytext))
+    ...
+
+def render_markup(text):
+    # markup function: knows it will mess up the context, but can't do
+    # a thing about it - the caller has to take care!
+    ...
+```
+
+with extracontext:
+
+```python
+import extracontext
+
+ctx = extracontext.ContextLocal()   # the only declaration needed at top level code
+
+def blah():
+    ctx.color = "red"
+    ctx.font = "arial"
+
+    mytext = ...
+    # simply calls  the function
+    render_markup(mytext)
+    ...
+
+@ctx
+def render_markup(text):
+    # we will mess the context - but the decorator ensures no changes leak
+    # back to the caller
+    ...
+
+```
+
+## Usage
+simply instantiate a `ContextLocal` namespace,
 and any attributes set in that namespace will be unique
 per thread and per asynchronous call chain (i.e.
 unique for each independent task).
