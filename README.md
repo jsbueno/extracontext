@@ -76,7 +76,8 @@ with extracontext:
 ```python
 import extracontext
 
-ctx = extracontext.ContextLocal()   # the only declaration needed at top level code
+# the only declaration needed at top level code
+ctx = extracontext.ContextLocal()
 
 def blah():
     ctx.color = "red"
@@ -89,8 +90,8 @@ def blah():
 
 @ctx
 def render_markup(text):
-    # we will mess the context - but the decorator ensures no changes leak
-    # back to the caller
+    # we will mess the context - but the decorator
+    # ensures no changes leak back to the caller
     ...
 
 ```
@@ -117,8 +118,6 @@ can be made local to functions or methods: the same inner
 ContextVar instance will be re-used when re-entering the function
 
 
-Usage:
-
 Create one or more project-wide instances of "extracontext.ContextLocal"
 Decorate your functions, co-routines, worker-methods and generators
 that should hold their own states with that instance itself, using it as a decorator
@@ -142,21 +141,17 @@ def myworker():
 
 ```
 
-More Features:
+## More Features:
 
-Unlike `threading.local` namespaces, one can explicitly isolate a contextlocal namespace
-when calling a function even on the same thread or same async call chain (task). And unlike
-`contextvars.ContextVar`, there is no need to have an explicit context copy
-and often an intermediate function call to switch context: `extracontext.ContextLocal`
-can isolate the context using either a `with` block or as a decorator
-(when entering the decorated function, all variables in the namespace are automatically
-protected against any changes that would be visible when that call returns,
-the previous values being restored).
+### extracontext namespaces work for generators
 
+Unlike PEP 567 contextvars, extracontext
+will sucessfully isolate contexts whe used with
+generator-functions - meaning,
+the generator body is actually executed in
+an isolated context:
 
 Example showing context separation for concurrent generators:
-
-
 
 ```python
 from extracontext import ContextLocal
@@ -172,120 +167,22 @@ def contexted_generator(value):
     results.append(ctx.value)
 
 
-
-def runner():
+    def runner():
     generators = [contexted_generator(i) for i in range(10)]
     any(next(gen) for gen in generators)
     any(next(gen, None) for gen in generators)
     assert results == list(range(10))
 ```
 
-ContextLocal namespaces can also be isolated by context-manager blocks (`with` statement):
+This is virtually impossible with contextvars.  (Ok,
+not impossible - the default extracontext backend
+does that using contextvars after all - but it encapsulates
+the complications for you)
 
-```python
-from extracontext import ContextLocal
-
-
-def with_block_example():
-
-    ctx = ContextLocal()
-    ctx.value = 1
-    with ctx:
-        ctx.value = 2
-        assert ctx.value == 2
-
-    assert ctx.value == 1
+This feature also works with async generators`
 
 
-```
-
-
-
-This is what one has to do if "isolated_function" will use a contextvar value
-for other nested calls, but should not change the caller's visible value:
-
-```python
-##########################
-# using stdlib contextvars:
-
-import contextvars
-
-# Each variable has to be declared at top-level:
-value = contextvars.ContextVar("value")
-
-def parent():
-    # explicit use of setter method for each value:
-    value.set(5)
-    # call to nested function which needs and isolated copy of context
-    # must be done in two stages:
-    new_context = contextvars.copy_context()
-    new_context.run(isolated_function)
-    # explicit use of getter method:
-    assert value.get() == 5
-
-def isolated_function()
-    value.set(23)
-    # run other code that needs "23"
-    # ...
-    assert value.get(23)
-
-
-```
-
-This is the same code using this package:
-```python
-from extracontext import NativeContextLocal
-
-# instantiate a namespace at top level:
-ctx = NativeContextLocal()
-
-def parent():
-    # create variables in the namespace without prior declaration:
-    # and just use the assignment operator (=)
-    ctx.value = 5
-    # no boilerplate to call function:
-    isolated_function()
-    # no need to call a getter:
-    assert ctx.value == 5
-
-# Decorate function that should run in an isolated context:
-@ctx
-def isolated_function()
-    assert ctx.value == 5
-    ctx.value = 23
-    # run other code that needs "23"
-    # ...
-    assert ctx.value == 23
-
-```
-
-Map namespaces
------------------
-
-The `ContextMap` class works just the same way, but works
-as a mapping:
-
-
-```python
-
-from extracontext import ContextMap
-
-# global namespace, available in any thread or async task:
-ctx = ContextMap()
-
-def myworker():
-    # value set only visible in the current thread or asyncio task:
-    ctx["value"] = "test"
-
-
-```
-
-Non Leaky Contexts
--------------------
-Contrary to default contextvars usage, generators
-(and async generators) running in another context do
-take effect inside the generator, and doesn't
-leak back to the calling scope:
+Another example of this feature:
 
 ```python
 import extracontext
@@ -309,15 +206,52 @@ wolves
 1
 ```
 
-By using a stdlib `contextvars.ContextVar` one simply
-can't isolate the body of a generator, save by
-not running a `for` at all, and running all
-iterations manually by calling `ctx_copy.run(next, mygenerator)`
+
+### Change context within  a context-manager `with` block:
+
+ContextLocal namespaces can also be isolated by context-manager blocks (`with` statement):
+
+```python
+from extracontext import ContextLocal
 
 
+def with_block_example():
 
-New for 1.0
------------
+    ctx = ContextLocal()
+    ctx.value = 1
+    with ctx:
+        ctx.value = 2
+        assert ctx.value == 2
+
+    assert ctx.value == 1
+
+
+```
+
+
+### Map namespaces
+
+Beyond namespace usages, `extracontext` offer ways
+to have contexts working as mutable mappings,
+using the `ContextMap` class.
+
+
+```python
+
+from extracontext import ContextMap
+
+# global namespace, available in any thread or async task:
+ctx = ContextMap()
+
+def myworker():
+    # value set only visible in the current thread or asyncio task:
+    ctx["value"] = "test"
+
+
+```
+
+
+### New for 1.0
 
 Switch the backend to use native Python contextvars (exposed in
 the stdlib "contextvars" module by default.
