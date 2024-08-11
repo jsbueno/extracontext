@@ -15,12 +15,12 @@ class ContextMap(MutableMapping, ContextLocal):
 
     _backend_registry = {}
 
-    #def __init__(self, initial: None | Mapping = None, *, backend=None):
-        #super().__init__()
-        #if not initial:
-            #return
-        #for key, value in initial.items():
-            #self[key] = value
+    # def __init__(self, initial: None | Mapping = None, *, backend=None):
+    # super().__init__()
+    # if not initial:
+    # return
+    # for key, value in initial.items():
+    # self[key] = value
 
     def __getitem__(self, name):
         try:
@@ -47,7 +47,6 @@ class ContextMap(MutableMapping, ContextLocal):
 class PyContextMap(ContextMap, PyContextLocal):
     _backend_key = "python"
     _BASEDIST = 1
-
 
     def __init__(self, initial: None | Mapping = None, *, backend=None):
         super().__init__()

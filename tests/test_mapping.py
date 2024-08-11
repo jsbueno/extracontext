@@ -288,9 +288,6 @@ def test_contextmap_mapping_enter_new_context_in_with_block(ContextMapClass):
 
 @pytest.mark.parametrize(["ContextMapClass"], [(PyContextMap,), (NativeContextMap,)])
 def test_contextmap_accepts_initial_values_map(ContextMapClass):
-    ctx = ContextMapClass({"a":1})
+    ctx = ContextMapClass({"a": 1})
 
     assert ctx["a"] == 1
-
-
-
