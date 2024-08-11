@@ -250,8 +250,120 @@ def myworker():
 
 ```
 
+### typing support
+There is no explicit typing support yet - but note that through the use of
+`ContextMap` it is possible to have declare some types, by
+simple declaring `Mapping[type1:type2]` typing.
 
-### New for 1.0
+
+## Specification and Implementation
+
+### ContextLocal
+
+`ContextLocal`  is the main class, and should suffice for most uses.
+It only takes the `backend` keyword-only argument,  which selects
+the usage of the pure-Python backend (`"python"`) or using
+a contextvars.ContextVar backend (`"native"`). The later is the default
+behavior. Calling this class will actually create
+an instance of the appropriate subclass, according to
+the backend: either `PyContextLocal` or `NativeContextLocal` -
+ in the same way stdlib `pathlib.Path` creates
+an instance of Path appropriate for Posix, or Windows style
+paths. (This pattern probably have a name - help welcome).
+
+An instance of it will create a new, fresh, namespace.
+Use dotted attribute access to populate it - each variable set
+in this way will persist through the context lifetime.
+
+#### Usage as a decorator:
+When used as a decorator for a function or method, that callable
+will automatically be executed in a copy of the calling context -
+meaning no changes it makes to any variable in the namespace
+is visible outside of the call.
+
+The decorator (and the isolation provided) works for
+both plain functions, generator functions, co-routine functions
+and async generator functions - meaning that whenever the
+execution switches to the caller context
+(in `yield` or `await` expression) the context is
+restored to that of the caller, and when it
+re-enters the paused code block, the isolated
+context is restored.
+
+#### Usage as a context manager
+
+A `ContextLocal` instance can simply be used in a
+context manager `with` statement, and any variables
+set or changed within the block will not be
+persisted after the block is over.
+
+```
+from extracontext import ContextLocal
+
+
+def with_block_example():
+
+    ctx = ContextLocal()
+    ctx.value = 1
+    with ctx:
+        ctx.value = 2
+        assert ctx.value == 2
+
+    assert ctx.value == 1
+
+```
+
+Also, they are re-entrant, so if in a function called
+within the block, the context is used again
+as a context manager, it will just work.
+
+
+
+
+#### Semantic difference to contextvars.ContextVar
+   Note that a fresh `ContextLocal()` instance will
+be empty, and have access to none of the values _or names_
+set in another instance. This contrasts sharply with
+`contextvars.Context`, for which each `contextvars.ContextVar`
+created anywhere else in the program (even 3rd party
+modules) is a valid key.
+
+
+### PyContextLocal
+    ...
+
+### NativeContextLocal
+    ...
+
+
+
+### History
+The original implementation from 2019 re-creates
+all the functionality provided by the PEP 567
+contextvars using pure Python code and a lot
+of introspection and meta-programming.
+Not sure why it did that - but one thing is that
+it coud provide the functionality for older
+Pythons at the time, and possibly also because
+I did not see, at the time, other ways
+to workaround the need to call a function
+in order to switch contexts.
+
+At some revival sprint in 2021, a backend
+using native contextvars was created -
+and it just got to completion,
+with all features and tests for the edge clases in
+August 2024, after other periods of non-activity.
+
+At this point, a mechanism for picking the
+desired backend was implemented, and the native
+`ContextLocal` class was switched to use the
+native stdlib contextvars as backend by default.
+(This should be much faster - benchmark
+contributions are welcome, though :-)  )
+
+
+## New for 1.0
 
 Switch the backend to use native Python contextvars (exposed in
 the stdlib "contextvars" module by default.
@@ -271,7 +383,16 @@ it performs a linear lookup in all the callchain for the context namespace.
  with none of the boilerplate or confuse API.
 
 
-Next Steps:
+## Next Steps
+
+1. Bringing in some more typing support
+(not sure what will be possible, but I believe some
+`typing.Protocol` templates at least. On an
+initial search, typing for namespaces is not
+a widelly known feature (if at all)
+
+
+### Old Next Steps:
 -----------
 (not so sure about these - they are fruit of some 2018 brainstorming for
 features in a project I am not coding for anymore)
