@@ -23,7 +23,7 @@ parameters.
 
 ## Rationale for "extracontext"
 
-Contextcars, introduced in Python 3.7, were
+Contextvars, introduced in Python 3.7, were
 implemented following a design decision by the
 which opted-out of the namespace approach
 used by Python's own `threading.local`
