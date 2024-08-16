@@ -47,5 +47,5 @@ dev = [
 testpaths = "tests"
 python_files = "test_*.py"
 python_functions = "test_*"
-addopts = "-v --doctest-modules --cov"
+addopts = "-v --doctest-modules"
 

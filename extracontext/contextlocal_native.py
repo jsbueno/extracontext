@@ -189,6 +189,9 @@ class NativeContextLocal(ContextLocal):
                     value = yield ctx_copy.run(generator.send, value)
             except StopIteration as stop:
                 return stop.value
+            except GeneratorExit:
+                ctx_copy.run(generator.close)
+                raise
             except Exception as exc:
                 # for debugging times: this will be hard without a break here!
                 # print(exc)
@@ -243,6 +246,10 @@ class NativeContextLocal(ContextLocal):
                 else:
                     async_res = ctx_copy.run(generator.asend, value)
                 value = yield await self._awaitable_wrapper(async_res, ctx_copy)
+            except GeneratorExit:
+                async_res = ctx_copy.run(generator.aclose)
+                await self._awaitable_wrapper(async_res, ctx_copy)
+                raise
             except StopAsyncIteration:
                 break
             except Exception as exc:

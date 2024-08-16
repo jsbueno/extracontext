@@ -240,3 +240,49 @@ def test_context_local_works_with_async_generator_throw(ContextClass):
         assert ctx.value == 1
 
     asyncio.run(controler())
+
+
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
+def test_context_local_async_generator_wraps_aclose(ContextClass):
+    ctx = ContextClass()
+    failed = "GeneratorExit never started"
+
+    step = 0
+    @ctx
+    async def gen():
+        nonlocal failed
+        failed = "GeneratorExit never thrown"
+
+        ctx.value = 2
+        try:
+            yield 23
+        except GeneratorExit:
+            failed = None
+            if ctx.value != 2:
+                failed = "ctx.value == {ctx.value} on generator continuation"
+            if step != 1:
+                failed = "generator close not called explictly"
+            ctx.value = 3
+            raise
+        else:
+            failed = "Generator close not called"
+        finally:
+            if ctx.value !=3:
+                failed = f"ctx.value = {ctx.value} on generator finalization"
+
+    async def driver():
+        nonlocal step
+        step = 0
+
+        ctx.value = 1
+        iter_ =  gen()
+        assert await iter_.__anext__() == 23
+        assert ctx.value == 1
+        step = 1
+        await iter_.aclose()
+        assert ctx.value == 1
+        step = 2
+        del iter_
+
+    asyncio.run(driver())
+    assert not failed, failed

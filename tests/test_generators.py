@@ -155,3 +155,44 @@ def test_context_local_vars_work_for_generators(ContextClass):
         ("ended second", 1),
         ("exited first context manager", 0),
     ]
+
+
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
+def test_context_local_generator_wraps_close(ContextClass):
+    ctx = ContextClass()
+    failed = "generator never started"
+
+    @ctx
+    def gen():
+        nonlocal failed
+
+        ctx.value = 2
+        failed = "GeneratorExit never thrown"
+        try:
+            yield 23
+        except GeneratorExit:
+            failed = None
+            if ctx.value != 2:
+                failed = "ctx.value == {ctx.value} on generator continuation"
+            if step != 1:
+                failed = "generator close not called explicitly"
+            ctx.value = 3
+            raise
+        else:
+            failed = "Generator close not called"
+        finally:
+            if ctx.value !=3:
+                failed = f"ctx.value = {ctx.value} on generator finalization"
+
+    step = 0
+
+    ctx.value = 1
+    iter_ = gen()
+    assert next(iter_) == 23
+    assert ctx.value == 1
+    step = 1
+    iter_.close()
+    assert ctx.value == 1
+    step = 2
+    del iter_
+    assert not failed, failed
