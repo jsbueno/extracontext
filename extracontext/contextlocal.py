@@ -19,16 +19,20 @@ visible inside  the decorated callable.
 
 import uuid
 import sys
-import typing as T
+import typing as ty
 
 from functools import wraps
-from types import FrameType
+from types import FrameType, TracebackType
 from weakref import WeakKeyDictionary
 
 from .base import ContextLocal
 
 __author__ = "João S. O. Bueno"
 __license__ = "LGPL v. 3.0+"
+
+
+P = ty.ParamSpec('P')
+T = ty.TypeVar('T')
 
 
 class ContextError(AttributeError):
@@ -43,18 +47,18 @@ class _WeakableId:
 
     __slots__ = ["__weakref__", "value"]
 
-    def __init__(self, v=0):
+    def __init__(self, v: int=0):
         if not v:
             v = int(uuid.uuid4())
         self.value = v
 
-    def __eq__(self, other):
-        return self.value == other.value
+    def __eq__(self, other: ty.Any) -> bool:
+        return ty.cast(bool, self.value == other.value)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.value)
 
-    def __repr__(self):
+    def __repr__(self) -> str:  # yes, seriously, mypy requires one to type the return for __repr__. DÓH
         return f"ID({uuid.UUID(int=self.value)})"
 
 
@@ -91,13 +95,13 @@ class PyContextLocal(ContextLocal):
 
     _backend_key = "python"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         super().__setattr__("_et_registry", WeakKeyDictionary())
 
     def _introspect_registry(
-        self, name: T.Optional[str] = None, starting_frame: int = 2
-    ) -> T.Tuple[dict, T.Tuple[int, int]]:
+        self, name: ty.Optional[str] = None, starting_frame: int = 2
+    ) -> ty.Tuple[dict[ty.Hashable, ty.Any], ty.Tuple[int, int]]:
         """
         returns the first namespace found for this context, if name is None
         else, the first namespace where the name exists. The second return
@@ -108,7 +112,7 @@ class PyContextLocal(ContextLocal):
         as it can't remove information on an outter namespace)
         """
         starting_frame += self._BASEDIST
-        f: T.Optional[FrameType] = sys._getframe(starting_frame)
+        f: ty.Optional[FrameType] = sys._getframe(starting_frame)
         count = 0
         first_ns = None
         while f:
@@ -131,7 +135,7 @@ class PyContextLocal(ContextLocal):
     def _frameid(self, frame: FrameType) -> _WeakableId:
         if not "$contexts_salt" in frame.f_locals:
             frame.f_locals["$contexts_salt"] = _WeakableId()
-        return frame.f_locals["$contexts_salt"]
+        return ty.cast(_WeakableId, frame.f_locals["$contexts_salt"])
 
     def _register_context(self, f: FrameType) -> None:
         hf = self._frameid(f)
@@ -145,7 +149,7 @@ class PyContextLocal(ContextLocal):
         contexts_list = f.f_locals["$contexts"]
         contexts_list[context_being_popped] = None
 
-    def __getattr__(self, name: str) -> T.Any:
+    def __getattr__(self, name: str) -> ty.Any:
         try:
             namespace, _ = self._introspect_registry(name)
             result = namespace[name]
@@ -155,7 +159,7 @@ class PyContextLocal(ContextLocal):
         except (ContextError, KeyError):
             raise AttributeError(f"Attribute not set: {name}")
 
-    def __setattr__(self, name: str, value: T.Any) -> None:
+    def __setattr__(self, name: str, value: ty.Any) -> None:
         try:
             namespace, _ = self._introspect_registry()
         except ContextError:
@@ -198,9 +202,9 @@ class PyContextLocal(ContextLocal):
         # fossil: namespace, _ = self._introspect_registry(name)
         namespace.setdefault("$deleted", set()).add(name)
 
-    def __call__(self, callable_: T.Callable) -> T.Callable:
+    def __call__(self, callable_: ty.Callable[P, T]) -> ty.Callable[P, T]:
         @wraps(callable_)
-        def wrapper(*args, **kw):
+        def wrapper(*args: ty.Any, **kw: ty.Any) -> T:
             f = sys._getframe()
             self._register_context(f)
             f_id = self._frameid(f)
@@ -221,21 +225,22 @@ class PyContextLocal(ContextLocal):
 
         return wrapper
 
-    def __enter__(self):
+    def __enter__(self) -> ty.Self:
         self._register_context(sys._getframe(1))
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    # How dumb is having to type this? How ##### are these typing tools?
+    def __exit__(self, exc_type: type[BaseException], exc_value: BaseException, traceback: TracebackType) -> None:
         self._pop_context(sys._getframe(1))
 
-    def _run(self, callable_, *args, **kw):
+    def _run(self, callable_: ty.Callable[P, T], *args: ty.Any, **kw: ty.Any) -> T:
         """Runs callable with an isolated context
         no need to decorate the target callable
         """
         with self:
             return callable_(*args, **kw)
 
-    def __dir__(self) -> T.List[str]:
+    def __dir__(self) -> ty.List[str]:
         frame_count = 2
         all_attrs = set()
         seen_namespaces = set()
@@ -251,13 +256,14 @@ class PyContextLocal(ContextLocal):
             if id(namespace) in seen_namespaces:
                 continue
             for key, value in namespace.items():
-                if not key.startswith("$") and value is not _sentinel:
+                if (not isinstance(key, str) or not key.startswith("$")) and value is not _sentinel:
                     all_attrs.add(key)
 
             seen_namespaces.add(id(namespace))
-        all_attrs = {
+        all_attrs_gen = (
             attr
             for attr in all_attrs
-            if getattr(self, attr, _sentinel) is not _sentinel
-        }
-        return sorted(all_attrs)
+            if getattr(self, ty.cast(str, attr), _sentinel) is not _sentinel
+        )
+
+        return sorted(str(attr) for attr in all_attrs_gen)
