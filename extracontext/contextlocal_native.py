@@ -85,7 +85,7 @@ class NativeContextLocal(ContextLocal):
 
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
-        self._et_registry[str, ty.Any] = {}
+        self._et_registry: dict[str, ty.Any] = {}
         self._et_stack: dict[_CtxKey, list[tuple[Context, Context | None]]] = {}
         self._et_lock = threading.Lock()
 
