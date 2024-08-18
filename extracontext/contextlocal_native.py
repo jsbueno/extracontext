@@ -178,9 +178,11 @@ class NativeContextLocal(ContextLocal):
         no need to decorate the target callable
         """
         new_context = copy_context()
-        result: T | ty.Awaitable[ty.Any] | ty.Generator[ty.Any, ty.Any, ty.Any] | ty.AsyncGenerator[ty.Any] = new_context.run(callable_, *args, **kw)
-        if inspect.isawaitable(result):
+        result: T | ty.Coroutine[ty.Any, ty.Any, ty.Any] | ty.Generator[ty.Any, ty.Any, ty.Any] | ty.AsyncGenerator[ty.Any] = new_context.run(callable_, *args, **kw)
+        if inspect.iscoroutine(result):
             result = self._awaitable_wrapper(result, new_context)
+        elif inspect.isawaitable(result):
+            warnings.warn(f"Unsuported non-coroutine awaitable: {result} will not be awaited in wrapped context")
         elif inspect.isgenerator(result):
             result = self._generator_wrapper(result, new_context)
         elif inspect.isasyncgen(result):
@@ -210,8 +212,8 @@ class NativeContextLocal(ContextLocal):
                     return ty.cast(T2, stop.value)
 
 
-    async def _awaitable_wrapper(self, coro: ty.Coroutine[ty.Any, ty.Any, T], ctx_copy: Context) -> ty.Coroutine[ty.Any, ty.Any, T]:
-        def trampoline() -> asyncio.Task[T]:
+    async def _awaitable_wrapper(self, coro: ty.Coroutine[ty.Any, ty.Any, T], ctx_copy: Context) -> T:
+        def trampoline() -> ty.Awaitable[T]:
             return asyncio.create_task(coro, context=ctx_copy)
 
         return await ctx_copy.run(trampoline)
