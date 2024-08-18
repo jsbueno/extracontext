@@ -11,6 +11,7 @@ import asyncio
 import inspect
 import sys
 import threading
+import types
 import typing as ty
 
 from contextvars import Context, ContextVar, copy_context
@@ -247,7 +248,7 @@ class NativeContextLocal(ContextLocal):
                 """This code will only work with Python versions > 3.11. Please use `ContextLocal(backend="python")` for Python version 3.8 - 3.10"""
             )
 
-    async def _async_generator_wrapper(self, generator, ctx_copy):
+    async def _async_generator_wrapper(self, generator: ty.AsyncGenerator[T1, T2], ctx_copy: Context) -> ty.AsyncGenerator[T1, T2]:
         value = None
         while True:
             try:
@@ -255,9 +256,13 @@ class NativeContextLocal(ContextLocal):
                     async_res = ctx_copy.run(anext, generator)
                 else:
                     async_res = ctx_copy.run(generator.asend, value)
-                value = yield await self._awaitable_wrapper(async_res, ctx_copy)
+                if not isinstance(async_res, types.CoroutineType):
+                    warnings.warn(f"Non coroutine awaitable rerutned by async gen not yet  supported - item will be awaited in parent context")
+                    value = yield await async_res
+                else:
+                    value = yield await self._awaitable_wrapper(async_res, ctx_copy)
             except GeneratorExit:
-                async_res = ctx_copy.run(generator.aclose)
+                async_res = ty.cast(ty.Awaitable[T1], ctx_copy.run(generator.aclose))
                 await self._awaitable_wrapper(async_res, ctx_copy)
                 raise
             except StopAsyncIteration:
