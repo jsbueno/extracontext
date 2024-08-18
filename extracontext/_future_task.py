@@ -12,7 +12,7 @@ to be needed.
 
 import contextvars
 import itertools
-from asyncio.tasks import _PyTask, _register_task
+from asyncio.tasks import _PyTask, _register_task  # type: ignore
 
 # from asyncio import futures
 

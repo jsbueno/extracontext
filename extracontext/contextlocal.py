@@ -256,9 +256,9 @@ class PyContextLocal(ContextLocal):
                     all_attrs.add(key)
 
             seen_namespaces.add(id(namespace))
-        all_attrs = (
+        all_attrs = {
             attr
             for attr in all_attrs
             if getattr(self, attr, _sentinel) is not _sentinel
-        )
+        }
         return sorted(all_attrs)

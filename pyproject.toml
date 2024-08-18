@@ -49,3 +49,6 @@ python_files = "test_*.py"
 python_functions = "test_*"
 addopts = "-v --doctest-modules"
 
+[tool.mypy]
+mypy_path = "typecheck"
+implicit_reexport = true

@@ -1,5 +1,8 @@
+from typing import Self
+
+
 class ContextLocal:
-    _backend_registry = {}
+    _backend_registry: dict[str, type[Self]] = {}
 
     def __new__(cls, *args, backend=None, **kwargs):
         if backend is None:
