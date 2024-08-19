@@ -12,21 +12,30 @@ to be needed.
 
 import contextvars
 import itertools
-from asyncio.tasks import _PyTask, _register_task  # type: ignore
+import asyncio
+import typing as ty
+from contextvars import Context
+
 
 # from asyncio import futures
 
 from asyncio import coroutines
+from asyncio.tasks import _PyTask, _register_task  # type: ignore
+
+if ty.TYPE_CHECKING:
+    from asyncio import Task as _PyTask
+
+    def _register_task(task: ty.Any) -> None: pass
 
 
 _task_name_counter = itertools.count(1).__next__
 
 
-class FutureTask(_PyTask):
+class FutureTask(ty.cast(type, _PyTask)):
     # Just overrides __init__ with Python 3.12 _PyTask.__init__,
     # which accepts the context as argument
 
-    def __init__(self, coro, *, loop=None, name=None, context=None, eager_start=False):
+    def __init__(self, coro: ty.Coroutine[ty.Any, ty.Any, ty.Any], *, loop: None | asyncio.BaseEventLoop =None, name: None | str=None, context: None | Context=None, eager_start: bool=False):
         # skip Python < 3.10 Task.__init__ :
         super(_PyTask, self).__init__(loop=loop)
         if self._source_traceback:

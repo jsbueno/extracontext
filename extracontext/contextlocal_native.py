@@ -257,7 +257,7 @@ class NativeContextLocal(ContextLocal):
                 else:
                     async_res = ctx_copy.run(generator.asend, value)
                 if not isinstance(async_res, types.CoroutineType):
-                    warnings.warn(f"Non coroutine awaitable rerutned by async gen not yet  supported - item will be awaited in parent context")
+                    warnings.warn(f"Non coroutine awaitable returned by async gen not yet  supported - item will be awaited in parent context")
                     value = yield await async_res
                 else:
                     value = yield await self._awaitable_wrapper(async_res, ctx_copy)
@@ -276,7 +276,7 @@ class NativeContextLocal(ContextLocal):
                 except StopAsyncIteration:
                     break
 
-    def __dir__(self):
+    def __dir__(self) -> list[str]:
         return list(
             key
             for key, value in self._et_registry.items()
