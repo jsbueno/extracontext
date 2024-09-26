@@ -92,7 +92,6 @@ class PyContextLocal(ContextLocal):
     _backend_key = "python"
 
     def __init__(self, **kwargs):
-        print(f"\n***************init {type(self)}")
         super().__init__(**kwargs)
         super().__setattr__("_et_registry", WeakKeyDictionary())
 
