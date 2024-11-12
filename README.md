@@ -250,6 +250,15 @@ def myworker():
 
 ```
 
+### Cross-thread context tasks
+One other thing contextvars can do is keep context information in the same task when parts of the task are performed in another thread (for example, with a `loop.run_in_executor` call).
+
+Extracontext implements a ThreadPoolExecutor subclass which can make the context
+information available in the other thread (and keep it safe of other task's function calls running in the same worker instance, of course)
+
+[WIP]
+
+
 ### typing support
 There is no explicit typing support yet - but note that through the use of
 `ContextMap` it is possible to have declare some types, by
