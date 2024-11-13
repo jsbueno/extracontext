@@ -253,10 +253,60 @@ def myworker():
 ### Cross-thread context tasks
 One other thing contextvars can do is keep context information in the same task when parts of the task are performed in another thread (for example, with a `loop.run_in_executor` call).
 
-Extracontext implements a ThreadPoolExecutor subclass which can make the context
-information available in the other thread (and keep it safe of other task's function calls running in the same worker instance, of course)
+Extracontext implements `ContextPreservingExecutor`, a `concurrent.futures.ThreadPoolExecutor`
+subclass which can make the context information available in the function called in the other thread
+(and keep it safe of other task's function calls running in the same worker instance, of course)
+This is a significant missing functionality missing with stdlib's contextvars, given that
+one of the most important roles of contextvars is to have independent values in different
+async concurrent tasks, and that the only resort these tasks have to run synchronous
+code (which happens often), is by running them in a threadpool executor.
+(even network name-checking in the default Python asyncio library code makes
+ use this approach).
 
-[WIP]
+Anyway, with extracontext it is possible for the off-thread
+target function to see the same context of the calling task -
+it can be used either with stdlib's `contextvar.ContextVar` or
+with `extracontext.ContextLocal` (**using the default, native, backend**. The
+Python backend does not have, currently, any support to
+have shared values across threads)
+
+
+This example, with all needed stages, will naturally print out
+the values ranging from 0 to 10, implying that each target function
+in the context is properly having access to an independent context,
+where they can read their unique value for the `ctx.value` name:
+
+```python
+
+import asyncio
+import random
+import time
+
+from extracontext import ContextLocal, ContextPreservingExecutor
+
+ctx = ContextLocal()
+
+def sync_part_of_task():
+    time.sleep(random.random())
+    print(ctx.value)
+
+async def async_part_of_task(executor, value):
+    ctx.value = value
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(executor, sync_part_of_task)
+
+async def amain():
+    tasks = []
+    with ContextPreservingExecutor() as executor:
+        async with asyncio.TaskGroup() as tg:
+            for value in range(10):
+                tasks.append(tg.create_task(async_part_of_task(executor, value)))
+
+asyncio.run(amain())
+
+```
+
+
 
 
 ### typing support
