@@ -8,6 +8,11 @@ from extracontext import PyContextLocal, NativeContextLocal
 
 consume = deque(maxlen=0).extend
 
+# These test whether values are _isolated_ across threads
+# (just like the original threading.local)/
+# For texts and examples of _preserving_ context across thread-calls
+# see the "test_executors" file/
+
 
 @pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_local_vars_work_for_threads(ContextClass):
@@ -36,7 +41,7 @@ def test_context_local_vars_work_for_threads(ContextClass):
 
 
 @pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
-def test_root_value_do_not_exists_on_new_thread(ContextClass):
+def test_root_value_do_not_exist_on_new_thread(ContextClass):
     # Variable unset in the namespace in a new thread is the
     # behavior for threading.local and contextvar.ContextVar:
     ctx = ContextClass()
