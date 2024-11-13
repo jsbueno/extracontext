@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 
 import pytest
 
-from extracontext import ContextLocal, PyContextLocal, ContextError, NativeContextLocal
+from extracontext import ContextLocal, PyContextLocal, NativeContextLocal
 
 
 @pytest.mark.parametrize(
@@ -39,8 +39,6 @@ def test_context_local_vars_work_as_namespace(ContextClass):
 
 @pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_function_holds_unique_value_for_attribute(ContextClass):
-    context_keys = set()
-
     ctx = ContextClass()
     called = False
 
@@ -64,7 +62,6 @@ def test_context_function_holds_unique_value_for_attribute(ContextClass):
 def test_context_once_value_in_function_is_erased_outer_value_doesnot_gets_visible_back(
     ContextClass,
 ):
-    context_keys = set()
 
     ctx = ContextClass()
     called = False
@@ -141,7 +138,6 @@ def test_context_inner_function_trying_to_erase_outter_value_blocks_cant_read_at
 
 @pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_inner_function_deleting_attribute_can_reassign_it(ContextClass):
-    context_keys = set()
 
     ctx = ContextClass()
 
@@ -165,7 +161,6 @@ def test_context_inner_function_deleting_attribute_can_reassign_it(ContextClass)
 def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassignemnt_should_not_see_outer_value(
     ContextClass,
 ):
-    context_keys = set()
 
     ctx = ContextClass()
 
@@ -192,7 +187,6 @@ def test_context_inner_function_reassigning_deleted_value_on_deletion_of_reassig
 
 @pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_context_granddaugher_works_nice_with_daughter_deleting_attribute(ContextClass):
-    context_keys = set()
 
     ctx = ContextClass()
 
@@ -379,7 +373,6 @@ def test_dir_context_should_work_with_intermediate_deleted_attribute(ContextClas
 
 
 def test_context_run_method_isolates_context():
-    context_keys = set()
 
     ctx = PyContextLocal()
 

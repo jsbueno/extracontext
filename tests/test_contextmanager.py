@@ -1,5 +1,3 @@
-import threading
-import time
 from collections import deque
 
 from extracontext import PyContextLocal, NativeContextLocal

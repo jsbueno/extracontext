@@ -154,7 +154,6 @@ def test_context_isolates_async_loop(CtxLocalCls):
 
     ctx = CtxLocalCls()
     ctx.aa = 1
-    results = []
 
     @ctx
     async def aiter():
@@ -204,7 +203,7 @@ def test_context_local_works_with_async_generator_send(ContextClass):
         assert value is sentinel
         try:
             await anext(g)
-        except StopAsyncIteration as stop:
+        except StopAsyncIteration:
             # assert stop.value is sentinel
             pass
         else:
@@ -222,7 +221,7 @@ def test_context_local_works_with_async_generator_throw(ContextClass):
     async def gen():
         ctx.value = 2
         with pytest.raises(RuntimeError):
-            value = yield
+            _ = yield
         assert ctx.value == 2
 
     async def controler():
@@ -233,7 +232,7 @@ def test_context_local_works_with_async_generator_throw(ContextClass):
         assert ctx.value == 1
         try:
             await g.athrow(RuntimeError("test exception"))
-        except StopAsyncIteration as stop:
+        except StopAsyncIteration:
             pass
         else:
             assert False, "StopAsyncIteration not raised"
@@ -248,6 +247,7 @@ def test_context_local_async_generator_wraps_aclose(ContextClass):
     failed = "GeneratorExit never started"
 
     step = 0
+
     @ctx
     async def gen():
         nonlocal failed
@@ -267,7 +267,7 @@ def test_context_local_async_generator_wraps_aclose(ContextClass):
         else:
             failed = "Generator close not called"
         finally:
-            if ctx.value !=3:
+            if ctx.value != 3:
                 failed = f"ctx.value = {ctx.value} on generator finalization"
 
     async def driver():
@@ -275,7 +275,7 @@ def test_context_local_async_generator_wraps_aclose(ContextClass):
         step = 0
 
         ctx.value = 1
-        iter_ =  gen()
+        iter_ = gen()
         assert await iter_.__anext__() == 23
         assert ctx.value == 1
         step = 1

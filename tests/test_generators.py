@@ -13,7 +13,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from extracontext import PyContextLocal, ContextError, NativeContextLocal
+from extracontext import PyContextLocal, NativeContextLocal
 
 
 @pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
@@ -84,13 +84,11 @@ def test_context_local_works_with_generator_send(ContextClass):
 def test_context_local_works_with_generator_throw(ContextClass):
     ctx = ContextClass()
 
-    sentinel = object()
-
     @ctx
     def gen():
         ctx.value = 2
         with pytest.raises(RuntimeError):
-            value = yield
+            _ = yield
         assert ctx.value == 2
 
     ctx.value = 1
@@ -100,7 +98,7 @@ def test_context_local_works_with_generator_throw(ContextClass):
     assert ctx.value == 1
     try:
         g.throw(RuntimeError())
-    except StopIteration as stop:
+    except StopIteration:
         pass
     else:
         assert False, "StopIteration not raised"
@@ -181,7 +179,7 @@ def test_context_local_generator_wraps_close(ContextClass):
         else:
             failed = "Generator close not called"
         finally:
-            if ctx.value !=3:
+            if ctx.value != 3:
                 failed = f"ctx.value = {ctx.value} on generator finalization"
 
     step = 0

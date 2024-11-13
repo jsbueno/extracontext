@@ -1,5 +1,3 @@
-
-
 """
 # This snippet is an example in PEP 550
 # which was relinquished in the final PEP 567 implementation
@@ -39,14 +37,13 @@ def main():
     var2.set('main modified')
     next(g)
 """
+
 import pytest
 
 from extracontext import PyContextLocal, NativeContextLocal
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    (NativeContextLocal,)
-])
+
+@pytest.mark.parametrize(["ContextClass"], [(PyContextLocal,), (NativeContextLocal,)])
 def test_pep550_generators_preserving(ContextClass):
     """Attributed shielding for test_pep550_generators_preserving
 
@@ -57,40 +54,40 @@ def test_pep550_generators_preserving(ContextClass):
 
     @ctx
     def gen():
-        ctx.var1 = 'gen'
+        ctx.var1 = "gen"
 
-        ctx.var1 == 'gen'
-        ctx.var2 == 'main'
+        ctx.var1 == "gen"
+        ctx.var2 == "main"
         yield 1
 
         # Modification to var1 in main() is shielded by
         # gen()'s local modification.
-        assert ctx.var1 == 'gen'
+        assert ctx.var1 == "gen"
 
         # But modifications to var2 are visible
-        ctx.var2 == 'main modified'
+        ctx.var2 == "main modified"
         yield 2
 
     # def main():
-    ctx.var1 = 'main'
-    ctx.var2 = 'main'
+    ctx.var1 = "main"
+    ctx.var2 = "main"
 
     g = gen()
 
     next(g)
 
     # Modification of var1 in gen() is not visible.
-    assert ctx.var1 == 'main'
+    assert ctx.var1 == "main"
 
-    ctx.var1 = 'main modified'
-    ctx.var2 = 'main modified'
+    ctx.var1 = "main modified"
+    ctx.var2 = "main modified"
     next(g)
 
 
-@pytest.mark.parametrize(["ContextClass"], [
-    (PyContextLocal,),
-    pytest.param(NativeContextLocal, marks=pytest.mark.skip)
-])
+@pytest.mark.parametrize(
+    ["ContextClass"],
+    [(PyContextLocal,), pytest.param(NativeContextLocal, marks=pytest.mark.skip)],
+)
 def test_pep550_generators_preserving_after_gen_created(ContextClass):
     """Attributed shielding for test_pep550_generators_preserving
 
@@ -101,32 +98,31 @@ def test_pep550_generators_preserving_after_gen_created(ContextClass):
 
     @ctx
     def gen():
-        ctx.var1 = 'gen'
+        ctx.var1 = "gen"
 
-        ctx.var1 == 'gen'
-        ctx.var2 == 'main'
+        ctx.var1 == "gen"
+        ctx.var2 == "main"
         yield 1
 
         # Modification to var1 in main() is shielded by
         # gen()'s local modification.
-        assert ctx.var1 == 'gen'
+        assert ctx.var1 == "gen"
 
         # But modifications to var2 are visible
-        ctx.var2 == 'main modified'
+        ctx.var2 == "main modified"
         yield 2
 
     # def main():
 
     g = gen()
-    ctx.var1 = 'main'
-    ctx.var2 = 'main'
+    ctx.var1 = "main"
+    ctx.var2 = "main"
 
     next(g)
 
     # Modification of var1 in gen() is not visible.
-    assert ctx.var1 == 'main'
+    assert ctx.var1 == "main"
 
-    ctx.var1 = 'main modified'
-    ctx.var2 = 'main modified'
+    ctx.var1 = "main modified"
+    ctx.var2 = "main modified"
     next(g)
-

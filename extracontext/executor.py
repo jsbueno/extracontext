@@ -15,11 +15,6 @@ subclass required for switching context.
 
 """
 
-import asyncio
-import inspect
-import sys
-import threading
-
 import concurrent.futures
 import concurrent.futures.thread
 import contextvars
@@ -29,6 +24,7 @@ from types import FunctionType
 
 # Our _WorkItem subclass: just
 # ordinary overriding adding a context attribute:
+
 
 class _CustomWorkItem(concurrent.futures.thread._WorkItem):
     def __init__(self, *args, **kwargs):
@@ -50,7 +46,6 @@ new_globals["_WorkItem"] = _CustomWorkItem
 new_submit = FunctionType(original_submit.__code__, new_globals)
 
 
-
 class ContextPreservingExecutor(ThreadPoolExecutor):
     """Drop in context preserving replacement to concurrent.futures.ThreadPoolExecutor
 
@@ -67,6 +62,5 @@ class ContextPreservingExecutor(ThreadPoolExecutor):
     calls and have the target function still see the current context.
 
     """
+
     submit = new_submit
-
-

@@ -1,15 +1,10 @@
 import asyncio
-import threading
-import time
-from collections import deque
 
 from contextvars import ContextVar, copy_context
 
-import pytest
+# import pytest
 
 from extracontext import ContextPreservingExecutor, ContextLocal
-
-
 
 
 def test_executor_preserves_context():
@@ -42,9 +37,11 @@ def test_executor_preserves_context():
 
     def stage_3():
         nonlocal all_ok, message
-        all_ok = (x:=myvar.get() == 23)
+        all_ok = myvar.get() == 23
         if not all_ok:
-            message = f"Context var set to {myvar.get()} in thread worker. Expecting 23!"
+            message = (
+                f"Context var set to {myvar.get()} in thread worker. Expecting 23!"
+            )
         myvar.set(42)
 
     copy_context().run(stage_1)
@@ -84,7 +81,6 @@ def test_executor_preserves_context_context_locals():
         if not all_ok:
             message = f"Context var set to {ctx.value} in thread worker. Expecting 23!"
         ctx.value = 42
-
 
     copy_context().run(stage_1)
 
@@ -127,10 +123,11 @@ def test_executor_preserves_context_across_several_tasks():
         nonlocal all_ok, message
         this_ok = ctx.value == value
         if not this_ok:
-            message += f"Context var set to {ctx.value} in thread worker. Expected {value}!\n"
+            message += (
+                f"Context var set to {ctx.value} in thread worker. Expected {value}!\n"
+            )
             all_ok = False
         ctx.value = 512
-
 
     copy_context().run(stage_1)
 
