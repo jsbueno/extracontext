@@ -4,7 +4,7 @@ from .mapping import ContextMap
 from .contextlocal_native import NativeContextLocal
 from .executor import ContextPreservingExecutor
 
-__version__ = "1.1.0-beta1"
+__version__ = "1.1.0"
 
 __all__ = [
     "ContextLocal",
