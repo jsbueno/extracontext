@@ -43,7 +43,6 @@ def test_executor_preserves_context():
     def stage_3():
         nonlocal all_ok, message
         all_ok = (x:=myvar.get() == 23)
-        print("\n****", "\n", x, "\n*****\n")
         if not all_ok:
             message = f"Context var set to {myvar.get()} in thread worker. Expecting 23!"
         myvar.set(42)

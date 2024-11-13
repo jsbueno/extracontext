@@ -22,9 +22,36 @@ import threading
 
 import concurrent.futures
 import concurrent.futures.thread
+import contextvars
 from concurrent.futures import ThreadPoolExecutor
+from types import FunctionType
 
+
+class _CustomWorkItem(concurrent.futures.thread._WorkItem):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._context = contextvars.copy_context()
+
+    def run(self):
+        ctx = self._context.copy()
+        result = ctx.run(super().run)
+        return result
+
+
+#class ContextPreservingExecutor(ThreadPoolExecutor):
+#    # [WIP]
+#    ...
+
+original_submit = ThreadPoolExecutor.submit
+new_globals = concurrent.futures.thread.__dict__.copy()
+new_globals["_WorkItem"] = _CustomWorkItem
+
+
+# TODO: assert .submit makes use of _WorkItem
+new_submit = FunctionType(original_submit.__code__, new_globals)
 
 class ContextPreservingExecutor(ThreadPoolExecutor):
     # [WIP]
-    ...
+    submit = new_submit
+
+
