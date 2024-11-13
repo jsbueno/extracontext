@@ -306,7 +306,7 @@ asyncio.run(amain())
 
 ```
 
-
+(new in version 1.1)
 
 
 ### typing support
