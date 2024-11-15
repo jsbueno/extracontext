@@ -1,4 +1,5 @@
 from collections.abc import Mapping, MutableMapping
+from typing import Optional
 
 from .base import ContextLocal
 from .contextlocal import PyContextLocal
@@ -48,7 +49,7 @@ class PyContextMap(ContextMap, PyContextLocal):
     _backend_key = "python"
     _BASEDIST = 1
 
-    def __init__(self, initial: None | Mapping = None, *, backend=None):
+    def __init__(self, initial: Optional[Mapping] = None, *, backend=None):
         super().__init__()
         if not initial:
             return
@@ -63,7 +64,7 @@ class PyContextMap(ContextMap, PyContextLocal):
 class NativeContextMap(ContextMap, NativeContextLocal):
     _backend_key = "native"
 
-    def __init__(self, initial: None | Mapping = None, *, backend=None):
+    def __init__(self, initial: Optional[Mapping] = None, *, backend=None):
         super().__init__()
         if not initial:
             return
