@@ -35,6 +35,7 @@ dependencies = [
 
 [project.urls]
 repository = "https://github.com/jsbueno/extracontext"
+documentation = "https://jsbueno.github.io/extracontext/"
 
 
 [project.optional-dependencies]
