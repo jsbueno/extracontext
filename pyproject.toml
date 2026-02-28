@@ -19,11 +19,12 @@ authors = [{ name = "Joao S. O. Bueno" }]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
@@ -44,11 +45,7 @@ dev = [
     "pytest-coverage",
     "pytest-timeout>=2.4.0",
 ]
-docs = [
-    "mkdocs",
-    "mkdocs-material",
-    "mkdocstrings[python]",
-]
+
 docs = [
     "mkdocs",
     "mkdocs-material",
@@ -60,7 +57,17 @@ timeout = 2
 testpaths = "tests"
 python_files = "test_*.py"
 python_functions = "test_*"
-addopts = "-v --doctest-modules" #  --timeout=2" # FIXME: timeout won't work like this in python 3.12
+addopts = "-v --doctest-modules" 
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+env_list = py310, py311, py312, py313, py314, pypy310, pypy311, py313t, py314t
+
+[testenv]
+extras = dev
+commands = pytest
+"""
 
 [tool.mypy]
 mypy_path = "typecheck"
