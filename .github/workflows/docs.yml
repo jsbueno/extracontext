@@ -18,4 +18,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ".[docs]"
-      - run: mkdocs gh-deploy --force
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      # - run: mkdocs gh-deploy --force
