@@ -2,7 +2,9 @@
 
 **Context Variable namespaces supporting generators, asyncio and multi-threading.**
 
-`extracontext` provides a [PEP 567](https://peps.python.org/pep-0567/)-compliant, drop-in replacement for `threading.local` namespaces that also works seamlessly with asyncio tasks and generators.
+`extracontext` provides utilities and facilities to isolated context variables added to Python 3.7, including an isolated namespace, no need to manually calling getters and setters, straightforward function calling and context managers. 
+
+In other words, it provides a [PEP 567](https://peps.python.org/pep-0567/)-compliant, drop-in replacement for `threading.local` namespaces that also works seamlessly with asyncio tasks and generators.
 
 ## Why extracontext?
 
