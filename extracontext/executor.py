@@ -31,10 +31,21 @@ class _CustomWorkItem(concurrent.futures.thread._WorkItem):
         super().__init__(*args, **kwargs)
         self._context = contextvars.copy_context()
 
-    def run(self):
-        ctx = self._context.copy()
-        result = ctx.run(super().run)
+    def run(self, ctx=None):
+        context_vars_ctx = self._context.copy()
+        # Python 3.14: the signature for _WorkItem.run changed, and
+        # it now needs an intemediate object that is passed in the "ctx" parameter.
+        result = context_vars_ctx.run(super().run, *((ctx,) if ctx else () ))
         return result
+
+import sys
+"""
+There are some changes in Python 3.14 to copy the context of the original thread,
+but it still won't work with a task-specific context
+
+"""
+if sys.version_info >= (3,14):
+    pass
 
 
 original_submit = ThreadPoolExecutor.submit
