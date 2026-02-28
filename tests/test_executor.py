@@ -9,7 +9,6 @@ from extracontext import ContextPreservingExecutor, ContextLocal
 
 def test_executor_preserves_context():
     # test executed using ordinary contexts
-
     executor = ContextPreservingExecutor(1)
 
     myvar = None
@@ -24,7 +23,6 @@ def test_executor_preserves_context():
 
     async def stage_2():
         nonlocal all_ok, message  # myvar
-
         myvar.set(23)
         loop = asyncio.get_running_loop()
         task1 = loop.run_in_executor(executor, stage_3)

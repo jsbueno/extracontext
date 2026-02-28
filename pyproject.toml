@@ -29,6 +29,8 @@ classifiers = [
     "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+]
 
 [project.urls]
 repository = "https://github.com/jsbueno/extracontext"
@@ -40,6 +42,7 @@ dev = [
     "black",
     "pyflakes",
     "pytest-coverage",
+    "pytest-timeout>=2.4.0",
 ]
 docs = [
     "mkdocs",
@@ -47,11 +50,12 @@ docs = [
     "mkdocstrings[python]",
 ]
 
+
 [tool.pytest.ini_options]
 testpaths = "tests"
 python_files = "test_*.py"
 python_functions = "test_*"
-addopts = "-v --doctest-modules"
+addopts = "-v --doctest-modules  --timeout=2"
 
 [tool.mypy]
 mypy_path = "typecheck"
