@@ -19,6 +19,8 @@ jobs:
           python-version: "3.12"
       - run: pip install ".[docs]"
 
+      - run: mkdocs build
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
