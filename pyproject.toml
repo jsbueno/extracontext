@@ -50,12 +50,12 @@ docs = [
     "mkdocstrings[python]",
 ]
 
-
 [tool.pytest.ini_options]
+timeout = 2
 testpaths = "tests"
 python_files = "test_*.py"
 python_functions = "test_*"
-addopts = "-v --doctest-modules  --timeout=2"
+addopts = "-v --doctest-modules" #  --timeout=2" # FIXME: timeout won't work like this in python 3.12
 
 [tool.mypy]
 mypy_path = "typecheck"

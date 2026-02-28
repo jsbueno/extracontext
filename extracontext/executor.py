@@ -34,7 +34,7 @@ class _CustomWorkItem(concurrent.futures.thread._WorkItem):
     def run(self, ctx=None):
         context_vars_ctx = self._context.copy()
         # Python 3.14: the signature for _WorkItem.run changed, and
-        # it now needs an intemediate object that is passed in the "ctx" parmeter.
+        # it now needs an intemediate object that is passed in the "ctx" parameter.
         result = context_vars_ctx.run(super().run, *((ctx,) if ctx else () ))
         return result
 
