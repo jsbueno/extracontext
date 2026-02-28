@@ -1,0 +1,35 @@
+site_name: extracontext
+site_description: Context Variable namespaces supporting generators, asyncio and multi-threading
+site_url: https://jsbueno.github.io/extracontext/
+repo_url: https://github.com/jsbueno/extracontext
+repo_name: jsbueno/extracontext
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.top
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+
+nav:
+  - Home: index.md
+  - Usage Guide: usage.md
+  - API Reference: api.md
